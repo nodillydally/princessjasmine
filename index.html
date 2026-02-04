@@ -581,7 +581,7 @@
       "mm hmm hmm (correct)",
       "this is not accel",
       "please proceed (respectfully)",
-      "per se… you passed",
+      "I wouldn't say you're very fast, per se",
       "wooOOOooW",
       "took took took"
     ];
@@ -770,7 +770,6 @@
           <div class="statusline">
             <span class="badge ${state.wrong >= 4 ? "warn" : ""}">Mistakes: ${state.wrong}/${state.maxWrong}</span>
             <span class="badge ${done ? "good" : ""}">${done ? "Access ready" : "Letters only"}</span>
-            <span class="badge">Error msg: <strong>too cute to compute</strong></span>
           </div>
 
           <div class="kbd" id="kbd"></div>
@@ -846,7 +845,7 @@
     function renderHearts() {
       return `
         <h1>Mini Game: Catch the Hearts</h1>
-        <p>Catch <strong>5</strong> hearts to unlock the final screen. No cringe. Only vibes.</p>
+        <p>Catch <strong>5</strong> hearts to unlock the final screen.</p>
 
         <div class="panel">
           <div class="statusline">
