@@ -562,7 +562,7 @@
     // Level 2 configs (editable)
     const UNLOCK_AT_UTC_MS = Date.parse("2026-02-14T05:05:00Z"); // Feb 14, 2026 12:05 AM Toronto time
     const LEVEL2_PASSWORD = "JAMERSON1426";
-    const LEVEL2_VIDEO_SRC = "./assets/vdayvideo(1).mp4";
+    const LEVEL2_VIDEO_SRC = "https://drive.google.com/uc?export=download&id=1giss6ZLbdXjyDWHjl0palJiJj9FqrHO5";
     const LEVEL2_PIN = "1234";
 
     const LEVELS = [
@@ -1319,32 +1319,31 @@
     }
 
     function renderLevel2Video() {
+      // Extract Google Drive file ID from the video source URL
+      const driveMatch = LEVEL2_VIDEO_SRC.match(/id=([^&]+)/);
+      const fileId = driveMatch ? driveMatch[1] : null;
+      const embedUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : LEVEL2_VIDEO_SRC;
+      const downloadUrl = fileId ? `https://drive.google.com/uc?export=download&id=${fileId}` : LEVEL2_VIDEO_SRC;
+
       view.innerHTML = `
         <h1>Third World Archives.mp4</h1>
         <p>Loading... core memories. IMPORTANT: Facetime is required when viewing.</p>
 
         <div class="panel">
-          <video id="valentineVideo" controls style="width: 100%; max-height: 400px; 
-                 background: rgba(0,0,0,0.5); border: 2px solid var(--border);">
-            <source src="${LEVEL2_VIDEO_SRC}" type="video/mp4">
-            Your browser does not support the video tag.
-          </video>
+          <iframe id="valentineVideo" src="${embedUrl}" 
+                  style="width: 100%; height: 400px; background: rgba(0,0,0,0.5); 
+                         border: 2px solid var(--border);" 
+                  allow="autoplay" allowfullscreen></iframe>
           <div class="row" style="margin-top: 12px; gap: 12px;">
-            <a href="${LEVEL2_VIDEO_SRC}" download="valentine-video.mp4" class="btn" style="text-decoration: none; display: inline-block;">Download</a>
+            <a href="${downloadUrl}" target="_blank" class="btn" style="text-decoration: none; display: inline-block;">Download</a>
             <button class="btn good" id="continueAfterVideo">Continue</button>
           </div>
         </div>
       `;
 
-      const video = document.getElementById("valentineVideo");
       const continueBtn = document.getElementById("continueAfterVideo");
 
       continueBtn.addEventListener("click", () => {
-        level2State.screen = "pin";
-        renderLevel2();
-      });
-
-      video.addEventListener("ended", () => {
         level2State.screen = "pin";
         renderLevel2();
       });
