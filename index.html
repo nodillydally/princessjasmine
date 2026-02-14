@@ -506,6 +506,106 @@
     .success-popup p { margin: 0 0 10px 0; }
     .success-popup .popup-ok { margin-top: 16px; animation: successTitleIn 0.4s ease-out 0.4s both; opacity: 0; }
 
+    /* Gift selection buttons with background images */
+    .gift-option {
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .gift-option:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px var(--phosphor-dim);
+    }
+    .gift-option.selected {
+      animation: giftSelected 0.8s ease-out forwards;
+      pointer-events: none;
+    }
+    .gift-option.unselected {
+      animation: giftFadeOut 0.5s ease-out forwards;
+      pointer-events: none;
+    }
+    @keyframes giftSelected {
+      0% { transform: scale(1); }
+      30% { transform: scale(1.15); box-shadow: 0 0 40px var(--phosphor); }
+      60% { transform: scale(1.1); }
+      100% { transform: scale(1.1); box-shadow: 0 0 60px var(--phosphor), 0 0 80px var(--phosphor-dim); filter: brightness(1.3); }
+    }
+    @keyframes giftFadeOut {
+      to { opacity: 0.3; filter: blur(2px); }
+    }
+
+    /* Confirmation screen reveal animations */
+    .confirmation-title {
+      animation: confirmRevealTitle 0.6s ease-out 0.2s both;
+      opacity: 0;
+    }
+    .confirmation-subtitle {
+      animation: confirmRevealTitle 0.6s ease-out 0.4s both;
+      opacity: 0;
+    }
+    .confirmation-panel {
+      animation: confirmRevealPanel 0.8s ease-out 0.6s both;
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    .confirmation-image-wrap {
+      animation: confirmRevealImage 1s ease-out 0.8s both;
+      opacity: 0;
+      transform: scale(0.9);
+    }
+    .confirmation-name {
+      animation: confirmRevealName 0.8s ease-out 1.2s both;
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    .confirmation-message {
+      animation: confirmRevealTitle 0.6s ease-out 1.4s both;
+      opacity: 0;
+    }
+    .confirmation-buttons {
+      animation: confirmRevealTitle 0.6s ease-out 1.6s both;
+      opacity: 0;
+    }
+    @keyframes confirmRevealTitle {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes confirmRevealPanel {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    @keyframes confirmRevealImage {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    @keyframes confirmRevealName {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
     /* Mobile responsive adjustments */
     @media (max-width: 640px) {
       h1 { font-size: 16px; }
@@ -518,6 +618,12 @@
       
       /* Video player mobile optimization */
       .panel { padding: 12px; }
+      
+      /* Gift selection buttons stack on mobile */
+      .gift-option {
+        min-width: 100% !important;
+        height: 150px !important;
+      }
       
       /* Make buttons stack on very small screens */
       @media (max-width: 400px) {
@@ -630,7 +736,7 @@
 
     // ====== LEVEL 2 STATE ======
     const level2State = {
-      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "gift" | "confirmation"
+      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "gift" | "giftLoading" | "confirmation"
       giftChoice: localStorage.getItem("level2_gift_choice") || null
     };
 
@@ -1217,6 +1323,8 @@
         renderLevel2Pin();
       } else if (level2State.screen === "gift") {
         renderLevel2Gift();
+      } else if (level2State.screen === "giftLoading") {
+        renderLevel2GiftLoading();
       } else if (level2State.screen === "confirmation") {
         renderLevel2Confirmation();
       }
@@ -1361,7 +1469,7 @@
 
       view.innerHTML = `
         <h1>Third World Archives.mp4</h1>
-        <p>Loading... core memories. IMPORTANT: Facetime is required when viewing.</p>
+        <p>Loading... core memories. </p>
 
         <div class="panel">
           <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: rgba(0,0,0,0.5); border: 2px solid var(--border);">
@@ -1434,39 +1542,67 @@
 
     function renderLevel2Gift() {
       view.innerHTML = `
-        <h1>Gift Selection</h1>
+        <h1>Adventure Selection</h1>
         <p>Choose your timeline, ${escapeHtml(HER_NAME)}.</p>
 
         <div class="panel">
-          <div class="row" style="flex-direction: column; gap: 12px;">
-            <button class="btn" data-gift="snowmobile" style="width: 100%; text-align: left;">
-              <strong>Snowmobile Day</strong><br/>
-              <span style="font-size: 11px; opacity: 0.7;">Skip class</span>
+          <div class="row" style="gap: 12px; justify-content: center; flex-wrap: wrap;">
+            <button class="btn gift-option" data-gift="snowmobile" 
+                    style="flex: 1; min-width: 200px; height: 180px; position: relative; 
+                           background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('./assets/snowmobile.png') center/cover;
+                           display: flex; flex-direction: column; justify-content: flex-end; align-items: center; 
+                           text-align: center; padding: 16px;">
+              <strong style="font-size: 15px;">Snowmobile Day</strong><br/>
+              <span style="font-size: 11px; opacity: 0.8;">Skip class</span>
             </button>
-            <button class="btn" data-gift="spa" style="width: 100%; text-align: left;">
-              <strong>Spa Day</strong><br/>
-              <span style="font-size: 11px; opacity: 0.7;">Skip class</span>
+            <button class="btn gift-option" data-gift="spa" 
+                    style="flex: 1; min-width: 200px; height: 180px; position: relative;
+                           background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('./assets/spa.png') center/cover;
+                           display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+                           text-align: center; padding: 16px;">
+              <strong style="font-size: 15px;">Spa Day</strong><br/>
+              <span style="font-size: 11px; opacity: 0.8;">Skip class</span>
             </button>
-            <button class="btn" data-gift="coop" style="width: 100%; text-align: left;">
-              <strong>Local Co-op Mode</strong><br/>
-              <span style="font-size: 11px; opacity: 0.7;">Do not skip class</span>
+            <button class="btn gift-option" data-gift="coop" 
+                    style="flex: 1; min-width: 200px; height: 180px; position: relative;
+                           background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('./assets/mystery.png') center/cover;
+                           display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
+                           text-align: center; padding: 16px;">
+              <strong style="font-size: 15px;">Local Co-op Mode</strong><br/>
+              <span style="font-size: 11px; opacity: 0.8;">Do not skip class</span>
             </button>
           </div>
         </div>
       `;
 
-      document.querySelectorAll("[data-gift]").forEach(btn => {
+      const allButtons = document.querySelectorAll("[data-gift]");
+      
+      allButtons.forEach(btn => {
         btn.addEventListener("click", () => {
           const choice = btn.dataset.gift;
-          level2State.giftChoice = choice;
-          localStorage.setItem("level2_gift_choice", choice);
-          level2State.screen = "confirmation";
-          renderLevel2();
+          
+          // Add selection animation
+          btn.classList.add("selected");
+          
+          // Fade out other buttons
+          allButtons.forEach(otherBtn => {
+            if (otherBtn !== btn) {
+              otherBtn.classList.add("unselected");
+            }
+          });
+          
+          // Wait for animation to complete before proceeding
+          setTimeout(() => {
+            level2State.giftChoice = choice;
+            localStorage.setItem("level2_gift_choice", choice);
+            level2State.screen = "giftLoading";
+            renderLevel2();
+          }, 900);
         });
       });
     }
 
-    function renderLevel2Confirmation() {
+    function renderLevel2GiftLoading() {
       const giftNames = {
         snowmobile: "Snowmobile Day",
         spa: "Spa Day",
@@ -1475,17 +1611,67 @@
       const chosenName = giftNames[level2State.giftChoice] || level2State.giftChoice;
 
       view.innerHTML = `
-        <h1>Selection Locked</h1>
-        <p>Deploying chosen timeline…</p>
+        <div class="panel loadingWrap">
+          <div class="spinner" aria-hidden="true"></div>
+          <h1>Processing Selection</h1>
+          <p>Deploying ${escapeHtml(chosenName)}…<br/>Please proceed.</p>
+        </div>
+      `;
 
-        <div class="panel">
-          <h2 style="text-align: center; margin: 20px 0; color: var(--good);">
-            ${escapeHtml(chosenName)}
-          </h2>
-          <p style="text-align: center; margin-bottom: 12px;">Your choice has been saved.</p>
-          <div class="row" style="justify-content: center; gap: 12px;">
-            <button class="btn primary" id="changeSelectionBtn">Change Selection</button>
-            <button class="btn" id="resetLevel2Btn">Reset Level 2</button>
+      // Auto-transition to confirmation after 2.5 seconds
+      setTimeout(() => {
+        level2State.screen = "confirmation";
+        renderLevel2();
+      }, 2500);
+    }
+
+    function renderLevel2Confirmation() {
+      const giftNames = {
+        snowmobile: "Snowmobile Day",
+        spa: "Spa Day",
+        coop: "Local Co-op Mode"
+      };
+      const giftImages = {
+        snowmobile: "./assets/snowmobile.png",
+        spa: "./assets/spa.png",
+        coop: "./assets/mystery.png"
+      };
+      const chosenName = giftNames[level2State.giftChoice] || level2State.giftChoice;
+      const chosenImage = giftImages[level2State.giftChoice] || "";
+
+      const HEART_FALLBACKS = [
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-be3e6963-3769-459e-bfda-b6db74c2f20d.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-5cfe090b-3ca6-4dd2-9cf0-0762a1431a99.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
+      ];
+
+      view.innerHTML = `
+        <div style="position: relative;">
+          <div class="floating-heart-photos" aria-hidden="true" style="z-index: 10;">
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
+          </div>
+          
+          <h1 class="confirmation-title">Clear Your Calendar on FEB 24</h1>
+          <p class="confirmation-subtitle">Deploying chosen timeline…</p>
+
+          <div class="panel confirmation-panel">
+            <div class="confirmation-image-wrap" style="width: 100%; max-width: 400px; height: 250px; margin: 0 auto 20px; 
+                 background: url('${chosenImage}') center/cover; 
+                 border: 2px solid var(--border); position: relative; overflow: hidden;">
+              <div style="position: absolute; inset: 0; background: linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3));"></div>
+            </div>
+            <h2 class="confirmation-name" style="text-align: center; margin: 20px 0; color: var(--good);">
+              ${escapeHtml(chosenName)}
+            </h2>
+            <p class="confirmation-message" style="text-align: center; margin-bottom: 12px;">Your choice has been saved.</p>
+            <div class="row confirmation-buttons" style="justify-content: center; gap: 12px;">
+              <button class="btn primary" id="changeSelectionBtn">Change Selection</button>
+              <button class="btn" id="resetLevel2Btn">Reset Level 2</button>
+            </div>
           </div>
         </div>
       `;
@@ -1505,6 +1691,48 @@
           level2State.screen = "video";
           renderLevel2();
         }
+      });
+
+      // Floating hearts mouse interaction
+      (function() {
+        var hearts = view.querySelectorAll(".floating-heart-mouse-wrap");
+        var radius = 140;
+        var strength = 38;
+        function onMove(e) {
+          var mx = e.clientX;
+          var my = e.clientY;
+          hearts.forEach(function(wrap) {
+            var r = wrap.getBoundingClientRect();
+            var cx = r.left + r.width / 2;
+            var cy = r.top + r.height / 2;
+            var dx = cx - mx;
+            var dy = cy - my;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            if (dist < radius) {
+              var push = (1 - dist / radius) * strength;
+              var tx = (dx / dist) * push;
+              var ty = (dy / dist) * push;
+              wrap.style.transform = "translate(" + tx + "px, " + ty + "px)";
+            } else {
+              wrap.style.transform = "translate(0, 0)";
+            }
+          });
+        }
+        document.addEventListener("mousemove", onMove);
+      })();
+
+      // Handle image loading errors with fallbacks
+      view.querySelectorAll(".floating-heart-photo-wrap img").forEach(function(img) {
+        img.onerror = function() {
+          var fallback = this.getAttribute("data-fallback");
+          if (fallback && !this.hasAttribute("data-failed")) {
+            this.setAttribute("data-failed", "true");
+            this.src = fallback;
+            this.removeAttribute("data-failed");
+          } else {
+            this.setAttribute("data-failed", "true");
+          }
+        };
       });
     }
 
@@ -1597,7 +1825,7 @@
         }
       } else if (currentMode === "level2") {
         // Skip to next screen in Level 2
-        const screens = ["countdown", "loading", "video", "pin", "gift", "confirmation"];
+        const screens = ["countdown", "loading", "video", "pin", "gift", "giftLoading", "confirmation"];
         const currentIndex = screens.indexOf(level2State.screen);
         if (currentIndex < screens.length - 1) {
           level2State.screen = screens[currentIndex + 1];
