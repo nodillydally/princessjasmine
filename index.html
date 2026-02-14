@@ -505,6 +505,26 @@
     }
     .success-popup p { margin: 0 0 10px 0; }
     .success-popup .popup-ok { margin-top: 16px; animation: successTitleIn 0.4s ease-out 0.4s both; opacity: 0; }
+
+    /* Mobile responsive adjustments */
+    @media (max-width: 640px) {
+      h1 { font-size: 16px; }
+      p { font-size: 13px; }
+      .btn { font-size: 12px; padding: 8px 12px; }
+      .pill { font-size: 11px; padding: 5px 8px; }
+      .topbar { gap: 8px; }
+      .row { gap: 8px; }
+      .app { padding: 16px; }
+      
+      /* Video player mobile optimization */
+      .panel { padding: 12px; }
+      
+      /* Make buttons stack on very small screens */
+      @media (max-width: 400px) {
+        .row { flex-direction: column; }
+        .row .btn { width: 100%; }
+      }
+    }
   </style>
 </head>
 <body>
@@ -563,7 +583,7 @@
     const UNLOCK_AT_UTC_MS = Date.parse("2026-02-14T05:05:00Z"); // Feb 14, 2026 12:05 AM Toronto time
     const LEVEL2_PASSWORD = "JAMERSON1426";
     const LEVEL2_VIDEO_SRC = "https://drive.google.com/uc?export=download&id=1giss6ZLbdXjyDWHjl0palJiJj9FqrHO5";
-    const LEVEL2_PIN = "1234";
+    const LEVEL2_PIN = "1424";
 
     const LEVELS = [
       {
@@ -714,7 +734,10 @@
     function renderLevelSelect() {
       stepPill.textContent = "Select Build";
       const homeBtn = document.getElementById("homeBtn");
+      const skipBtn = document.getElementById("skipBtn");
+      
       if (homeBtn) homeBtn.style.display = "none";
+      if (skipBtn) skipBtn.style.display = "";
 
       const now = Date.now();
       const unlocked = now >= UNLOCK_AT_UTC_MS;
@@ -1171,7 +1194,18 @@
     function renderLevel2() {
       stepPill.textContent = "Valentine's Day";
       const homeBtn = document.getElementById("homeBtn");
+      const skipBtn = document.getElementById("skipBtn");
+      
       if (homeBtn) homeBtn.style.display = "";
+      
+      // Hide skip button on countdown and pin screens
+      if (skipBtn) {
+        if (level2State.screen === "countdown" || level2State.screen === "pin") {
+          skipBtn.style.display = "none";
+        } else {
+          skipBtn.style.display = "";
+        }
+      }
 
       if (level2State.screen === "countdown") {
         renderLevel2Countdown();
@@ -1212,27 +1246,26 @@
                         background: rgba(0,0,0,0.4); border: 2px solid var(--border); 
                         color: var(--text); font-size: 14px; margin-bottom: 10px;" />
           <p id="passwordError" style="color: var(--warn); margin-bottom: 10px; min-height: 20px;"></p>
-          <button class="btn good" id="submitPassword">Submit</button>
+          <div class="row" style="gap: 12px;">
+            <button class="btn good" id="submitPassword">Submit</button>
+            <button class="btn primary" id="hintPasswordBtn">Hint</button>
+          </div>
+          <p id="hintPasswordMsg" style="margin-top: 10px; margin-bottom: 0;"></p>
         </div>
       `;
 
       const input = document.getElementById("passwordInput");
       const errorEl = document.getElementById("passwordError");
       const submitBtn = document.getElementById("submitPassword");
+      const hintBtn = document.getElementById("hintPasswordBtn");
+      const hintMsg = document.getElementById("hintPasswordMsg");
 
       const handleSubmit = () => {
-        const now = Date.now();
-        const timeLeft = UNLOCK_AT_UTC_MS - now;
-        
         if (input.value === LEVEL2_PASSWORD) {
-          if (timeLeft <= 0) {
-            // Unlocked! Proceed to loading
-            clearInterval(countdownInterval);
-            level2State.screen = "loading";
-            renderLevel2();
-          } else {
-            errorEl.textContent = "Correct password, but event hasn't started yet. Wait for countdown.";
-          }
+          // Correct password bypasses countdown
+          clearInterval(countdownInterval);
+          level2State.screen = "loading";
+          renderLevel2();
         } else {
           errorEl.textContent = "Incorrect password. Try again.";
         }
@@ -1241,6 +1274,10 @@
       submitBtn.addEventListener("click", handleSubmit);
       input.addEventListener("keypress", (e) => {
         if (e.key === "Enter") handleSubmit();
+      });
+      
+      hintBtn.addEventListener("click", () => {
+        hintMsg.textContent = "you thought";
       });
 
       if (!unlocked) {
@@ -1251,9 +1288,6 @@
             const display = document.getElementById("countdownDisplay");
             if (display) {
               display.textContent = "00:00:00";
-            }
-            if (errorEl && errorEl.textContent.includes("hasn't started yet")) {
-              errorEl.textContent = "Event unlocked! Submit password to proceed.";
             }
             clearInterval(countdownInterval);
           } else {
@@ -1330,10 +1364,11 @@
         <p>Loading... core memories. IMPORTANT: Facetime is required when viewing.</p>
 
         <div class="panel">
-          <iframe id="valentineVideo" src="${embedUrl}" 
-                  style="width: 100%; height: 400px; background: rgba(0,0,0,0.5); 
-                         border: 2px solid var(--border);" 
-                  allow="autoplay" allowfullscreen></iframe>
+          <div style="position: relative; width: 100%; padding-bottom: 56.25%; background: rgba(0,0,0,0.5); border: 2px solid var(--border);">
+            <iframe id="valentineVideo" src="${embedUrl}" 
+                    style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: none;" 
+                    allow="autoplay" allowfullscreen></iframe>
+          </div>
           <div class="row" style="margin-top: 12px; gap: 12px;">
             <a href="${downloadUrl}" target="_blank" class="btn" style="text-decoration: none; display: inline-block;">Download</a>
             <button class="btn good" id="continueAfterVideo">Continue</button>
@@ -1361,13 +1396,19 @@
                         color: var(--text); font-size: 24px; text-align: center; 
                         letter-spacing: 8px; margin-bottom: 10px;" />
           <p id="pinError" style="color: var(--warn); margin-bottom: 10px; min-height: 20px;"></p>
-          <button class="btn good" id="submitPin">Submit</button>
+          <div class="row" style="gap: 12px;">
+            <button class="btn good" id="submitPin">Submit</button>
+            <button class="btn primary" id="hintPinBtn">Hint</button>
+          </div>
+          <p id="hintPinMsg" style="margin-top: 10px; margin-bottom: 0;"></p>
         </div>
       `;
 
       const input = document.getElementById("pinInput");
       const errorEl = document.getElementById("pinError");
       const submitBtn = document.getElementById("submitPin");
+      const hintBtn = document.getElementById("hintPinBtn");
+      const hintMsg = document.getElementById("hintPinMsg");
 
       input.addEventListener("input", (e) => {
         e.target.value = e.target.value.replace(/[^0-9]/g, "");
@@ -1384,6 +1425,10 @@
 
       input.addEventListener("keypress", (e) => {
         if (e.key === "Enter") submitBtn.click();
+      });
+      
+      hintBtn.addEventListener("click", () => {
+        hintMsg.textContent = "you thought";
       });
     }
 
@@ -1467,7 +1512,10 @@
     function renderLevel1() {
       stepPill.textContent = level1State.step === 1 ? `Level ${LEVELS[level1State.levelIndex].difficulty}` : `step ${level1State.step}/4`;
       const homeBtn = document.getElementById("homeBtn");
+      const skipBtn = document.getElementById("skipBtn");
+      
       if (homeBtn) homeBtn.style.display = "";
+      if (skipBtn) skipBtn.style.display = "";
 
       if (level1State.step === 1) {
         view.innerHTML = renderHangman();
