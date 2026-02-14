@@ -546,7 +546,10 @@
     <div class="topbar">
       <div class="pill">valentine.exe</div>
       <div class="pill" id="stepPill">Level Easy</div>
-      <button type="button" class="skip-btn" id="skipBtn" title="Skip (admin)">skip</button>
+      <div style="display: flex; gap: 6px;">
+        <button type="button" class="skip-btn" id="homeBtn" title="Return to level select" style="display: none;">home</button>
+        <button type="button" class="skip-btn" id="skipBtn" title="Skip (admin)">skip</button>
+      </div>
     </div>
     <div id="view"></div>
     <div class="footer"> </div>
@@ -555,6 +558,12 @@
   <script>
     // ====== CONFIG YOU CAN EDIT ======
     const HER_NAME = "Jasmine"; // change if you want
+
+    // Level 2 configs (editable)
+    const UNLOCK_AT_UTC_MS = Date.parse("2026-02-14T05:05:00Z"); // Feb 14, 2026 12:05 AM Toronto time
+    const LEVEL2_PASSWORD = "JAMERSON1426";
+    const LEVEL2_VIDEO_SRC = "./assets/vdayvideo.mp4";
+    const LEVEL2_PIN = "1234";
 
     const LEVELS = [
       {
@@ -586,8 +595,11 @@
       "took took took"
     ];
 
-    // ====== APP STATE ======
-    const state = {
+    // ====== GLOBAL MODE STATE ======
+    let currentMode = "select"; // "select" | "level1" | "level2"
+
+    // ====== LEVEL 1 STATE ======
+    const level1State = {
       step: 1,
       wrong: 0,
       guessed: new Set(),
@@ -596,17 +608,176 @@
       levelIndex: 0
     };
 
+    // ====== LEVEL 2 STATE ======
+    const level2State = {
+      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "gift" | "confirmation"
+      giftChoice: localStorage.getItem("level2_gift_choice") || null
+    };
+
     const view = document.getElementById("view");
     const stepPill = document.getElementById("stepPill");
 
-    function setStep(n) {
-      state.step = n;
-      stepPill.textContent = n === 1 ? `Level ${LEVELS[state.levelIndex].difficulty}` : `step ${n}/4`;
-      render();
+    let countdownInterval = null;
+    let heartInterval = null;
+    let heartCountdownInterval = null;
+
+    // ====== THEME SWITCHING ======
+    function setTheme(theme) {
+      const root = document.documentElement;
+      if (theme === "level2") {
+        // Blue theme for Level 2
+        root.style.setProperty("--bg", "#080a1a");
+        root.style.setProperty("--screen", "#06060f");
+        root.style.setProperty("--card", "#0a0a18");
+        root.style.setProperty("--border", "#243c5c");
+        root.style.setProperty("--text", "#b3d9ff");
+        root.style.setProperty("--muted", "#7a9cc9");
+        root.style.setProperty("--accent", "#6b9dff");
+        root.style.setProperty("--good", "#8fa3ff");
+        root.style.setProperty("--warn", "#60a0e8");
+        root.style.setProperty("--phosphor", "#b3d9ff");
+        root.style.setProperty("--phosphor-dim", "rgba(179, 217, 255, 0.2)");
+        // Change hearts to blue
+        document.querySelectorAll(".pixel-heart").forEach(h => h.textContent = "💙");
+      } else {
+        // Level 1 default red/pink theme
+        root.style.setProperty("--bg", "#1a0808");
+        root.style.setProperty("--screen", "#0f0606");
+        root.style.setProperty("--card", "#180a0a");
+        root.style.setProperty("--border", "#5c2424");
+        root.style.setProperty("--text", "#ffb3c1");
+        root.style.setProperty("--muted", "#c97a8a");
+        root.style.setProperty("--accent", "#ff6b9d");
+        root.style.setProperty("--good", "#ff8fa3");
+        root.style.setProperty("--warn", "#e8a060");
+        root.style.setProperty("--phosphor", "#ffb3c1");
+        root.style.setProperty("--phosphor-dim", "rgba(255, 179, 193, 0.2)");
+        // Reset hearts to red
+        document.querySelectorAll(".pixel-heart").forEach(h => h.textContent = "♥");
+      }
+    }
+
+    // ====== CLEANUP INTERVALS ======
+    function cleanupIntervals() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      if (heartInterval) clearInterval(heartInterval);
+      if (heartCountdownInterval) clearInterval(heartCountdownInterval);
+      countdownInterval = null;
+      heartInterval = null;
+      heartCountdownInterval = null;
+    }
+
+    // ====== NAVIGATION ======
+    function goToLevelSelect() {
+      cleanupIntervals();
+      currentMode = "select";
+      setTheme("level1");
+      renderLevelSelect();
+    }
+
+    function startLevel1() {
+      cleanupIntervals();
+      currentMode = "level1";
+      setTheme("level1");
+      level1State.step = 1;
+      level1State.wrong = 0;
+      level1State.guessed.clear();
+      level1State.revealedCount = 0;
+      level1State.levelIndex = 0;
+      renderLevel1();
+    }
+
+    function startLevel2() {
+      cleanupIntervals();
+      currentMode = "level2";
+      setTheme("level2");
+      if (level2State.giftChoice) {
+        level2State.screen = "confirmation";
+      } else {
+        level2State.screen = "countdown";
+      }
+      renderLevel2();
+    }
+
+    // ====== LEVEL 1 FUNCTIONS ======
+    function setLevel1Step(n) {
+      level1State.step = n;
+      stepPill.textContent = n === 1 ? `Level ${LEVELS[level1State.levelIndex].difficulty}` : `step ${n}/4`;
+      renderLevel1();
     }
 
     function escapeHtml(str) {
       return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+
+    // ====== LEVEL SELECT SCREEN ======
+    function renderLevelSelect() {
+      stepPill.textContent = "Select Build";
+      const homeBtn = document.getElementById("homeBtn");
+      if (homeBtn) homeBtn.style.display = "none";
+
+      const now = Date.now();
+      const unlocked = now >= UNLOCK_AT_UTC_MS;
+      const timeLeft = UNLOCK_AT_UTC_MS - now;
+      
+      let level2Status = "";
+      if (!unlocked && timeLeft > 0) {
+        const hours = Math.floor(timeLeft / 3600000);
+        const mins = Math.floor((timeLeft % 3600000) / 60000);
+        const secs = Math.floor((timeLeft % 60000) / 1000);
+        level2Status = `Locked: ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      } else {
+        level2Status = "Available";
+      }
+
+      view.innerHTML = `
+        <h1>Select Build</h1>
+        <p>Choose your timeline, ${escapeHtml(HER_NAME)}.</p>
+
+        <div class="panel">
+          <div class="row" style="flex-direction: column; gap: 14px;">
+            <button class="btn primary" id="level1Btn" style="width: 100%; text-align: left;">
+              <strong>LEVEL 1</strong> - Classic Mode<br/>
+              <span style="font-size: 11px; opacity: 0.7;">Original hangman flow</span>
+            </button>
+            <button class="btn" id="level2Btn" style="width: 100%; text-align: left; border-color: #6b9dff; background: rgba(107, 157, 255, 0.15); color: #b3d9ff;">
+              <strong>LEVEL 2</strong> - Valentine's Day<br/>
+              <span style="font-size: 11px; opacity: 0.7;" id="level2Status">${level2Status}</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("level1Btn").addEventListener("click", startLevel1);
+      
+      const level2Btn = document.getElementById("level2Btn");
+      level2Btn.addEventListener("click", startLevel2);
+      level2Btn.addEventListener("mouseenter", () => {
+        level2Btn.style.background = "rgba(107, 157, 255, 0.25)";
+      });
+      level2Btn.addEventListener("mouseleave", () => {
+        level2Btn.style.background = "rgba(107, 157, 255, 0.15)";
+      });
+
+      // Update countdown every second if locked
+      if (!unlocked && timeLeft > 0) {
+        countdownInterval = setInterval(() => {
+          const now = Date.now();
+          const timeLeft = UNLOCK_AT_UTC_MS - now;
+          if (timeLeft <= 0) {
+            clearInterval(countdownInterval);
+            renderLevelSelect();
+          } else {
+            const hours = Math.floor(timeLeft / 3600000);
+            const mins = Math.floor((timeLeft % 3600000) / 60000);
+            const secs = Math.floor((timeLeft % 60000) / 1000);
+            const statusEl = document.getElementById("level2Status");
+            if (statusEl) {
+              statusEl.textContent = `Locked: ${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+          }
+        }, 1000);
+      }
     }
 
     function heartBurstInContainer(container) {
@@ -753,10 +924,10 @@
       setTimeout(() => overlay.remove(), 2000);
     }
 
-    // ====== STEP 1: INTRO + HANGMAN ======
+    // ====== LEVEL 1: INTRO + HANGMAN ======
     function renderHangman() {
-      const lvl = LEVELS[state.levelIndex];
-      const masked = maskSentence(lvl.sentence, lvl.secret, state.guessed);
+      const lvl = LEVELS[level1State.levelIndex];
+      const masked = maskSentence(lvl.sentence, lvl.secret, level1State.guessed);
       const done = !masked.includes("_");
 
       return `
@@ -768,7 +939,7 @@
           <div class="masked" aria-label="masked password">${masked}</div>
 
           <div class="statusline">
-            <span class="badge ${state.wrong >= 4 ? "warn" : ""}">Mistakes: ${state.wrong}/${state.maxWrong}</span>
+            <span class="badge ${level1State.wrong >= 4 ? "warn" : ""}">Mistakes: ${level1State.wrong}/${level1State.maxWrong}</span>
             <span class="badge ${done ? "good" : ""}">${done ? "Access ready" : "Letters only"}</span>
           </div>
 
@@ -802,7 +973,7 @@
 
       const letters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
       kbd.innerHTML = letters.map(L => {
-        const disabled = state.guessed.has(L) ? "disabled" : "";
+        const disabled = level1State.guessed.has(L) ? "disabled" : "";
         return `<button class="key" data-key="${L}" ${disabled}>${L}</button>`;
       }).join("");
 
@@ -812,19 +983,19 @@
     }
 
     function guessLetter(L) {
-      if (state.guessed.has(L)) return;
-      state.guessed.add(L);
+      if (level1State.guessed.has(L)) return;
+      level1State.guessed.add(L);
 
-      const secretOnly = LEVELS[state.levelIndex].secret.toUpperCase();
+      const secretOnly = LEVELS[level1State.levelIndex].secret.toUpperCase();
       if (!secretOnly.includes(L)) {
-        state.wrong += 1;
-        if (state.wrong >= state.maxWrong) {
+        level1State.wrong += 1;
+        if (level1State.wrong >= level1State.maxWrong) {
           alert("too cute to compute.\n\nResetting your attempts 😭");
-          state.wrong = 0;
-          state.guessed.clear();
+          level1State.wrong = 0;
+          level1State.guessed.clear();
         }
       }
-      render();
+      renderLevel1();
     }
 
     // ====== STEP 2: THIRD WORLD LOADING ======
@@ -841,7 +1012,7 @@
       `;
     }
 
-    // ====== STEP 3: CATCH HEARTS MINI-GAME ======
+    // ====== LEVEL 1: CATCH HEARTS MINI-GAME ======
     function renderHearts() {
       return `
         <h1>Mini Game: Catch the Hearts</h1>
@@ -849,7 +1020,7 @@
 
         <div class="panel">
           <div class="statusline">
-            <span class="badge">Caught: <strong id="caught">${state.revealedCount}</strong>/5</span>
+            <span class="badge">Caught: <strong id="caught">${level1State.revealedCount}</strong>/5</span>
             <span class="badge">Time: <strong id="heartTimer">—</strong>s</span>
             <span class="badge">Message: <strong id="msgTitle">waiting…</strong></span>
           </div>
@@ -859,14 +1030,12 @@
 
           <div class="row" style="margin-top:12px;">
             <button class="btn primary" id="spawnBtn">Start</button>
-            ${state.revealedCount >= 5 ? '<button class="btn good" id="toFinalBtn">Proceed</button>' : ''}
+            ${level1State.revealedCount >= 5 ? '<button class="btn good" id="toFinalBtn">Proceed</button>' : ''}
           </div>
         </div>
       `;
     }
 
-    let heartInterval = null;
-    let heartCountdownInterval = null;
     const HEARTS_GAME_DURATION = 12;
 
     function startHearts() {
@@ -909,21 +1078,21 @@
       const reveal = HEART_REVEALS[Math.floor(Math.random() * HEART_REVEALS.length)];
 
       heart.addEventListener("click", () => {
-        state.revealedCount = Math.min(5, state.revealedCount + 1);
-        document.getElementById("caught").textContent = state.revealedCount;
+        level1State.revealedCount = Math.min(5, level1State.revealedCount + 1);
+        document.getElementById("caught").textContent = level1State.revealedCount;
         msgTitle.textContent = "received";
         toast.textContent = reveal;
 
         heart.remove();
 
-        if (state.revealedCount >= 5) {
+        if (level1State.revealedCount >= 5) {
           const row = document.getElementById("spawnBtn")?.parentElement;
           if (row && !document.getElementById("toFinalBtn")) {
             const btn = document.createElement("button");
             btn.className = "btn good";
             btn.id = "toFinalBtn";
             btn.textContent = "Proceed";
-            btn.addEventListener("click", () => setStep(4));
+            btn.addEventListener("click", () => setLevel1Step(4));
             row.appendChild(btn);
           }
         }
@@ -947,7 +1116,7 @@
 
           <div class="panel finalAskPanel">
             <h1 style="margin-top:0;"><span class="valentineQuestion">Will you be my Valentine?</span></h1>
-            <p>Choose wisely. </p>
+            <p>Choose wisely. The system is… sensitive.</p>
 
             <div class="finalButtons" id="finalBox">
               <button class="btn good yesBtn" id="yesBtn">YES 💖</button>
@@ -998,9 +1167,310 @@
       });
     }
 
-    // ====== RENDER ROUTER ======
-    function render() {
-      if (state.step === 1) {
+    // ====== LEVEL 2 RENDER FUNCTIONS ======
+    function renderLevel2() {
+      stepPill.textContent = "Valentine's Day";
+      const homeBtn = document.getElementById("homeBtn");
+      if (homeBtn) homeBtn.style.display = "";
+
+      if (level2State.screen === "countdown") {
+        renderLevel2Countdown();
+      } else if (level2State.screen === "loading") {
+        renderLevel2Loading();
+      } else if (level2State.screen === "video") {
+        renderLevel2Video();
+      } else if (level2State.screen === "pin") {
+        renderLevel2Pin();
+      } else if (level2State.screen === "gift") {
+        renderLevel2Gift();
+      } else if (level2State.screen === "confirmation") {
+        renderLevel2Confirmation();
+      }
+    }
+
+    function renderLevel2Countdown() {
+      const now = Date.now();
+      const timeLeft = UNLOCK_AT_UTC_MS - now;
+
+      const unlocked = timeLeft <= 0;
+      const hours = Math.floor(Math.max(0, timeLeft) / 3600000);
+      const mins = Math.floor((Math.max(0, timeLeft) % 3600000) / 60000);
+      const secs = Math.floor((Math.max(0, timeLeft) % 60000) / 1000);
+
+      view.innerHTML = `
+        <h1>Valentine's Day Build</h1>
+        <p>Deploying at 12:05 AM.</p>
+
+        <div class="panel">
+          <h1 style="text-align: center; margin: 20px 0;">
+            <span id="countdownDisplay">${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}</span>
+          </h1>
+          <p style="text-align: center; margin-bottom: 12px;">Password will be delivered via secure channel.</p>
+          
+          <input type="text" id="passwordInput" placeholder="Enter password" 
+                 style="font-family: var(--mono); width: 100%; padding: 10px; 
+                        background: rgba(0,0,0,0.4); border: 2px solid var(--border); 
+                        color: var(--text); font-size: 14px; margin-bottom: 10px;" />
+          <p id="passwordError" style="color: var(--warn); margin-bottom: 10px; min-height: 20px;"></p>
+          <button class="btn good" id="submitPassword">Submit</button>
+        </div>
+      `;
+
+      const input = document.getElementById("passwordInput");
+      const errorEl = document.getElementById("passwordError");
+      const submitBtn = document.getElementById("submitPassword");
+
+      const handleSubmit = () => {
+        const now = Date.now();
+        const timeLeft = UNLOCK_AT_UTC_MS - now;
+        
+        if (input.value === LEVEL2_PASSWORD) {
+          if (timeLeft <= 0) {
+            // Unlocked! Proceed to loading
+            clearInterval(countdownInterval);
+            level2State.screen = "loading";
+            renderLevel2();
+          } else {
+            errorEl.textContent = "Correct password, but event hasn't started yet. Wait for countdown.";
+          }
+        } else {
+          errorEl.textContent = "Incorrect password. Try again.";
+        }
+      };
+
+      submitBtn.addEventListener("click", handleSubmit);
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") handleSubmit();
+      });
+
+      if (!unlocked) {
+        countdownInterval = setInterval(() => {
+          const now = Date.now();
+          const timeLeft = UNLOCK_AT_UTC_MS - now;
+          if (timeLeft <= 0) {
+            const display = document.getElementById("countdownDisplay");
+            if (display) {
+              display.textContent = "00:00:00";
+            }
+            if (errorEl && errorEl.textContent.includes("hasn't started yet")) {
+              errorEl.textContent = "Event unlocked! Submit password to proceed.";
+            }
+            clearInterval(countdownInterval);
+          } else {
+            const hours = Math.floor(timeLeft / 3600000);
+            const mins = Math.floor((timeLeft % 3600000) / 60000);
+            const secs = Math.floor((timeLeft % 60000) / 1000);
+            const display = document.getElementById("countdownDisplay");
+            if (display) {
+              display.textContent = `${String(hours).padStart(2, '0')}:${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+            }
+          }
+        }, 1000);
+      }
+    }
+
+    function renderLevel2Password() {
+      view.innerHTML = `
+        <h1>Access Code Required</h1>
+        <p>Enter the password to proceed.</p>
+
+        <div class="panel">
+          <input type="text" id="passwordInput" placeholder="Enter password" 
+                 style="font-family: var(--mono); width: 100%; padding: 10px; 
+                        background: rgba(0,0,0,0.4); border: 2px solid var(--border); 
+                        color: var(--text); font-size: 14px; margin-bottom: 10px;" />
+          <p id="passwordError" style="color: var(--warn); margin-bottom: 10px; min-height: 20px;"></p>
+          <button class="btn good" id="submitPassword">Submit</button>
+        </div>
+      `;
+
+      const input = document.getElementById("passwordInput");
+      const errorEl = document.getElementById("passwordError");
+      const submitBtn = document.getElementById("submitPassword");
+
+      submitBtn.addEventListener("click", () => {
+        if (input.value === LEVEL2_PASSWORD) {
+          level2State.screen = "loading";
+          renderLevel2();
+        } else {
+          errorEl.textContent = "Incorrect password. Try again.";
+        }
+      });
+
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") submitBtn.click();
+      });
+    }
+
+    function renderLevel2Loading() {
+      view.innerHTML = `
+        <div class="panel loadingWrap">
+          <div class="spinner" aria-hidden="true"></div>
+          <h1>Access granted</h1>
+          <p>Deploying Mi Reine.exe…<br/>Please proceed.</p>
+        </div>
+      `;
+
+      // Auto-transition to video after 2.5 seconds
+      setTimeout(() => {
+        level2State.screen = "video";
+        renderLevel2();
+      }, 2500);
+    }
+
+    function renderLevel2Video() {
+      view.innerHTML = `
+        <h1>Third World Archives.mp4</h1>
+        <p>Loading... core memories. IMPORTANT: Facetime is required when viewing.</p>
+
+        <div class="panel">
+          <video id="valentineVideo" controls style="width: 100%; max-height: 400px; 
+                 background: rgba(0,0,0,0.5); border: 2px solid var(--border);">
+            <source src="${LEVEL2_VIDEO_SRC}" type="video/mp4">
+            Your browser does not support the video tag.
+          </video>
+          <div class="row" style="margin-top: 12px; gap: 12px;">
+            <a href="${LEVEL2_VIDEO_SRC}" download="valentine-video.mp4" class="btn" style="text-decoration: none; display: inline-block;">Download</a>
+            <button class="btn good" id="continueAfterVideo">Continue</button>
+          </div>
+        </div>
+      `;
+
+      const video = document.getElementById("valentineVideo");
+      const continueBtn = document.getElementById("continueAfterVideo");
+
+      continueBtn.addEventListener("click", () => {
+        level2State.screen = "pin";
+        renderLevel2();
+      });
+
+      video.addEventListener("ended", () => {
+        level2State.screen = "pin";
+        renderLevel2();
+      });
+    }
+
+    function renderLevel2Pin() {
+      view.innerHTML = `
+        <h1>Please enter the 4-digit code to proceed.</h1>
+        <p>This will be delivered via a secure channel.</p>
+
+        <div class="panel">
+          <input type="text" id="pinInput" placeholder="0000" maxlength="4"
+                 style="font-family: var(--mono); width: 100%; padding: 10px; 
+                        background: rgba(0,0,0,0.4); border: 2px solid var(--border); 
+                        color: var(--text); font-size: 24px; text-align: center; 
+                        letter-spacing: 8px; margin-bottom: 10px;" />
+          <p id="pinError" style="color: var(--warn); margin-bottom: 10px; min-height: 20px;"></p>
+          <button class="btn good" id="submitPin">Submit</button>
+        </div>
+      `;
+
+      const input = document.getElementById("pinInput");
+      const errorEl = document.getElementById("pinError");
+      const submitBtn = document.getElementById("submitPin");
+
+      input.addEventListener("input", (e) => {
+        e.target.value = e.target.value.replace(/[^0-9]/g, "");
+      });
+
+      submitBtn.addEventListener("click", () => {
+        if (input.value === LEVEL2_PIN) {
+          level2State.screen = "gift";
+          renderLevel2();
+        } else {
+          errorEl.textContent = "Incorrect code. Try again.";
+        }
+      });
+
+      input.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") submitBtn.click();
+      });
+    }
+
+    function renderLevel2Gift() {
+      view.innerHTML = `
+        <h1>Gift Selection</h1>
+        <p>Choose your timeline, ${escapeHtml(HER_NAME)}.</p>
+
+        <div class="panel">
+          <div class="row" style="flex-direction: column; gap: 12px;">
+            <button class="btn" data-gift="snowmobile" style="width: 100%; text-align: left;">
+              <strong>Snowmobile Day</strong><br/>
+              <span style="font-size: 11px; opacity: 0.7;">Skip class</span>
+            </button>
+            <button class="btn" data-gift="spa" style="width: 100%; text-align: left;">
+              <strong>Spa Day</strong><br/>
+              <span style="font-size: 11px; opacity: 0.7;">Skip class</span>
+            </button>
+            <button class="btn" data-gift="coop" style="width: 100%; text-align: left;">
+              <strong>Local Co-op Mode</strong><br/>
+              <span style="font-size: 11px; opacity: 0.7;">Do not skip class</span>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.querySelectorAll("[data-gift]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const choice = btn.dataset.gift;
+          level2State.giftChoice = choice;
+          localStorage.setItem("level2_gift_choice", choice);
+          level2State.screen = "confirmation";
+          renderLevel2();
+        });
+      });
+    }
+
+    function renderLevel2Confirmation() {
+      const giftNames = {
+        snowmobile: "Snowmobile Day",
+        spa: "Spa Day",
+        coop: "Local Co-op Mode"
+      };
+      const chosenName = giftNames[level2State.giftChoice] || level2State.giftChoice;
+
+      view.innerHTML = `
+        <h1>Selection Locked</h1>
+        <p>Deploying chosen timeline…</p>
+
+        <div class="panel">
+          <h2 style="text-align: center; margin: 20px 0; color: var(--good);">
+            ${escapeHtml(chosenName)}
+          </h2>
+          <p style="text-align: center; margin-bottom: 12px;">Your choice has been saved.</p>
+          <div class="row" style="justify-content: center; gap: 12px;">
+            <button class="btn primary" id="changeSelectionBtn">Change Selection</button>
+            <button class="btn" id="resetLevel2Btn">Reset Level 2</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("changeSelectionBtn").addEventListener("click", () => {
+        // Just go back to gift selection without clearing anything
+        level2State.screen = "gift";
+        renderLevel2();
+      });
+
+      document.getElementById("resetLevel2Btn").addEventListener("click", () => {
+        if (confirm("Reset Level 2? This will clear your selection and you'll need to re-watch the video and enter the PIN again.")) {
+          // Clear localStorage
+          localStorage.removeItem("level2_gift_choice");
+          // Reset state
+          level2State.giftChoice = null;
+          level2State.screen = "video";
+          renderLevel2();
+        }
+      });
+    }
+
+    // ====== LEVEL 1 RENDER ROUTER ======
+    function renderLevel1() {
+      stepPill.textContent = level1State.step === 1 ? `Level ${LEVELS[level1State.levelIndex].difficulty}` : `step ${level1State.step}/4`;
+      const homeBtn = document.getElementById("homeBtn");
+      if (homeBtn) homeBtn.style.display = "";
+
+      if (level1State.step === 1) {
         view.innerHTML = renderHangman();
         buildKeyboard();
 
@@ -1014,20 +1484,20 @@
 
         if (forceBtn) {
           forceBtn.addEventListener("click", () => {
-            const last = state.levelIndex === LEVELS.length - 1;
+            const last = level1State.levelIndex === LEVELS.length - 1;
 
             // go to loading screen
-            setStep(2);
+            setLevel1Step(2);
 
             // after loading, either next level or game
             const next = () => {
               if (!last) {
-                state.levelIndex += 1;
-                state.guessed.clear();
-                state.wrong = 0;
-                setStep(1);
+                level1State.levelIndex += 1;
+                level1State.guessed.clear();
+                level1State.wrong = 0;
+                setLevel1Step(1);
               } else {
-                setStep(3);
+                setLevel1Step(3);
               }
             };
 
@@ -1036,45 +1506,70 @@
           });
         }
 
-      } else if (state.step === 2) {
+      } else if (level1State.step === 2) {
         view.innerHTML = renderLoading();
-        document.getElementById("loadNext").addEventListener("click", () => setStep(3));
+        document.getElementById("loadNext").addEventListener("click", () => setLevel1Step(3));
 
-      } else if (state.step === 3) {
+      } else if (level1State.step === 3) {
         view.innerHTML = renderHearts();
         document.getElementById("spawnBtn").addEventListener("click", startHearts);
         const toFinalBtn = document.getElementById("toFinalBtn");
-        if (toFinalBtn) toFinalBtn.addEventListener("click", () => setStep(4));
+        if (toFinalBtn) toFinalBtn.addEventListener("click", () => setLevel1Step(4));
 
-      } else if (state.step === 4) {
+      } else if (level1State.step === 4) {
         view.innerHTML = renderFinal();
         attachNoButtonDodge();
       }
     }
 
-    render();
+    // Home button: return to level select
+    document.getElementById("homeBtn").addEventListener("click", () => {
+      goToLevelSelect();
+    });
 
     // Admin skip: advance level or step
     document.getElementById("skipBtn").addEventListener("click", () => {
-      if (state.step === 1) {
-        const last = state.levelIndex === LEVELS.length - 1;
-        setStep(2);
-        setTimeout(() => {
-          if (!last) {
-            state.levelIndex += 1;
-            state.guessed.clear();
-            state.wrong = 0;
-            setStep(1);
-          } else {
-            setStep(3);
-          }
-        }, 900);
-      } else if (state.step === 2) {
-        setStep(3);
-      } else if (state.step === 3) {
-        setStep(4);
+      if (currentMode === "level1") {
+        if (level1State.step === 1) {
+          const last = level1State.levelIndex === LEVELS.length - 1;
+          setLevel1Step(2);
+          setTimeout(() => {
+            if (!last) {
+              level1State.levelIndex += 1;
+              level1State.guessed.clear();
+              level1State.wrong = 0;
+              setLevel1Step(1);
+            } else {
+              setLevel1Step(3);
+            }
+          }, 900);
+        } else if (level1State.step === 2) {
+          setLevel1Step(3);
+        } else if (level1State.step === 3) {
+          setLevel1Step(4);
+        }
+      } else if (currentMode === "level2") {
+        // Skip to next screen in Level 2
+        const screens = ["countdown", "loading", "video", "pin", "gift", "confirmation"];
+        const currentIndex = screens.indexOf(level2State.screen);
+        if (currentIndex < screens.length - 1) {
+          level2State.screen = screens[currentIndex + 1];
+          renderLevel2();
+        }
       }
     });
+
+    // Dev helper: reset Level 2 state (call from console: resetLevel2State())
+    window.resetLevel2State = function() {
+      localStorage.removeItem("level2_gift_choice");
+      level2State.giftChoice = null;
+      level2State.screen = "countdown";
+      console.log("Level 2 state reset. Reload page or go back to level select to see countdown.");
+      if (currentMode === "select") renderLevelSelect();
+    };
+
+    // Initialize app
+    renderLevelSelect();
   </script>
 </body>
 </html>
