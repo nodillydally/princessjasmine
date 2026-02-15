@@ -606,6 +606,61 @@
       }
     }
 
+    /* Photo Ordering Game */
+    .photo-order-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .photo-order-card {
+      aspect-ratio: 3 / 4;
+      position: relative;
+      border: 2px solid var(--border);
+      background: var(--screen);
+      overflow: hidden;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .photo-order-card:hover {
+      transform: scale(1.03);
+      box-shadow: 0 0 16px var(--phosphor-dim);
+    }
+    .photo-order-card.selected {
+      border-color: var(--accent);
+      box-shadow: 0 0 20px var(--phosphor-dim), 0 0 0 3px var(--accent);
+      outline: none;
+    }
+    .photo-order-card:focus-visible {
+      outline: 2px solid var(--accent);
+      outline-offset: 2px;
+    }
+    .photo-order-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .photo-order-badge {
+      position: absolute;
+      bottom: 4px;
+      left: 4px;
+      font-family: var(--mono);
+      font-size: 11px;
+      padding: 2px 6px;
+      background: rgba(0,0,0,0.75);
+      color: var(--text);
+      border: 1px solid var(--border);
+    }
+    .photo-order-status {
+      margin-top: 12px;
+      font-family: var(--mono);
+      font-size: 13px;
+      min-height: 22px;
+    }
+    .photo-order-status.correct { color: var(--good); }
+    .photo-order-status.try-again { color: var(--warn); }
+
     /* Mobile responsive adjustments */
     @media (max-width: 640px) {
       h1 { font-size: 16px; }
@@ -736,8 +791,18 @@
 
     // ====== LEVEL 2 STATE ======
     const level2State = {
-      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "gift" | "giftLoading" | "confirmation"
+      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "photoOrder" | "gift" | "giftLoading" | "confirmation"
       giftChoice: localStorage.getItem("level2_gift_choice") || null
+    };
+
+    // ====== PHOTO ORDERING GAME STATE ======
+    // order: indices into photos array (shuffled once on mount).
+    // Correctness: ids in display order must match photos sorted by id high to low (see getCorrectOrder).
+    const photoOrderState = {
+      order: [],
+      selectedIndex: null,
+      status: null, // null | "correct!" | "try again"
+      photos: []
     };
 
     const view = document.getElementById("view");
@@ -834,6 +899,83 @@
 
     function escapeHtml(str) {
       return str.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
+    }
+
+    // Fisher-Yates shuffle (mutates array)
+    function shuffleArray(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // ====== PHOTO ORDERING GAME ======
+    // How to plug in real photos: pass opts.photos = Array of { id, src, alt? }. IDs determine
+    // correct order: ascending by id (numeric or string). E.g. buildPhotoOrderPhotos() builds
+    // from assets/valentine/1.jpeg..N.jpeg; put your files in assets/valentine/ and set
+    // PHOTO_ORDER_COUNT. Correctness: current grid order (by position) must match photos sorted
+    // by id high to low; getCorrectOrder(photos) returns that expected id list.
+    function getCorrectOrder(photos) {
+      return photos.slice().sort(function(a, b) {
+        const na = Number(a.id);
+        const nb = Number(b.id);
+        if (!Number.isNaN(na) && !Number.isNaN(nb)) return nb - na;
+        return String(b.id).localeCompare(String(a.id));
+      }).map(function(p) { return p.id; });
+    }
+    function isOrderCorrect(order, photos) {
+      const currentIds = order.map(function(i) { return photos[i].id; });
+      const correctIds = getCorrectOrder(photos);
+      if (currentIds.length !== correctIds.length) return false;
+      for (let i = 0; i < currentIds.length; i++) {
+        if (currentIds[i] !== correctIds[i]) return false;
+      }
+      return true;
+    }
+    function renderPhotoOrderingGame(opts) {
+      const photos = opts.photos;
+      const title = opts.title != null ? opts.title : "Memory Lane: Put These in Order";
+      const description = opts.description != null ? opts.description : "Arrange the photos from highest to lowest (newest to oldest).";
+      const hintText = opts.hintText != null ? opts.hintText : "No hints.";
+      const order = photoOrderState.order;
+      const selectedIndex = photoOrderState.selectedIndex;
+      const status = photoOrderState.status;
+      const statusClass = status === "correct!" ? "correct" : status === "try again" ? "try-again" : "";
+      const statusMsg = status === "correct!" ? "Correct! Well done." : status === "try again" ? "Not quite right. Try again!" : "";
+      const cardsHtml = order.map(function(photoIndex, position) {
+        const photo = photos[photoIndex];
+        const oneBased = position + 1;
+        const selected = selectedIndex === position ? " selected" : "";
+        return (
+          '<button type="button" class="photo-order-card' + selected + '" data-slot="' + position + '" aria-label="Photo position ' + oneBased + ', swap to reorder">' +
+            '<img src="' + escapeHtml(photo.src) + '" alt="' + escapeHtml(photo.alt || "Photo " + oneBased) + '" data-fallback-jpg="' + escapeHtml(photo.src.replace(/\.jpeg$/i, ".jpg")) + '" data-fallback-png="' + escapeHtml(photo.src.replace(/\.jpe?g$/i, ".png")) + '">' +
+            '<span class="photo-order-badge" aria-hidden="true">' + oneBased + '</span>' +
+          '</button>'
+        );
+      }).join("");
+      return (
+        '<h1>' + escapeHtml(title) + '</h1>' +
+        '<p>' + escapeHtml(description) + '</p>' +
+        '<p class="pill" style="margin-bottom:8px;">' + escapeHtml(hintText) + '</p>' +
+        '<div class="panel">' +
+          '<div class="photo-order-grid" role="group" aria-label="Photo grid">' + cardsHtml + '</div>' +
+          '<div class="photo-order-status ' + statusClass + '" id="photoOrderStatus">' + escapeHtml(statusMsg) + '</div>' +
+          '<div class="row" style="margin-top:12px; flex-wrap: wrap; gap: 10px;">' +
+            '<button type="button" class="btn primary" id="photoOrderCheckBtn">Check Order</button>' +
+            (status === "correct!" ? '<button type="button" class="btn good" id="photoOrderProceedBtn">Proceed</button>' : '') +
+          '</div>' +
+        '</div>'
+      );
+    }
+
+    // Build photos for the game (used by renderLevel2PhotoOrder). Put 1.jpeg..N in assets/valentine/.
+    var PHOTO_ORDER_COUNT = 6;
+    function buildPhotoOrderPhotos() {
+      return Array.from({ length: PHOTO_ORDER_COUNT }, function(_, i) {
+        var n = i + 1;
+        return { id: n, src: "assets/valentine/" + n + ".jpeg", alt: "Photo " + n };
+      });
     }
 
     // ====== LEVEL SELECT SCREEN ======
@@ -1304,7 +1446,7 @@
       
       if (homeBtn) homeBtn.style.display = "";
       
-      // Hide skip button on countdown and pin screens
+      // Hide skip button on countdown and pin screens only
       if (skipBtn) {
         if (level2State.screen === "countdown" || level2State.screen === "pin") {
           skipBtn.style.display = "none";
@@ -1321,6 +1463,8 @@
         renderLevel2Video();
       } else if (level2State.screen === "pin") {
         renderLevel2Pin();
+      } else if (level2State.screen === "photoOrder") {
+        renderLevel2PhotoOrder();
       } else if (level2State.screen === "gift") {
         renderLevel2Gift();
       } else if (level2State.screen === "giftLoading") {
@@ -1524,7 +1668,7 @@
 
       submitBtn.addEventListener("click", () => {
         if (input.value === LEVEL2_PIN) {
-          level2State.screen = "gift";
+          level2State.screen = "photoOrder";
           renderLevel2();
         } else {
           errorEl.textContent = "Incorrect code. Try again.";
@@ -1537,6 +1681,78 @@
       
       hintBtn.addEventListener("click", () => {
         hintMsg.textContent = "you thought";
+      });
+    }
+
+    function renderLevel2PhotoOrder() {
+      var photos = buildPhotoOrderPhotos();
+      if (photoOrderState.order.length !== photos.length) {
+        photoOrderState.photos = photos;
+        photoOrderState.order = shuffleArray(Array.from({ length: photos.length }, function(_, i) { return i; }));
+        photoOrderState.selectedIndex = null;
+        photoOrderState.status = null;
+      }
+      var opts = {
+        photos: photoOrderState.photos,
+        title: "Memory Lane: Put These in Order",
+        description: "Arrange the photos from highest to lowest (newest to oldest).",
+        hintText: "No hints."
+      };
+      view.innerHTML = renderPhotoOrderingGame(opts);
+      photoOrderState.onComplete = function() {
+        level2State.screen = "gift";
+        renderLevel2();
+      };
+      var grid = view.querySelector(".photo-order-grid");
+      if (grid) {
+        grid.querySelectorAll(".photo-order-card").forEach(function(btn) {
+          btn.addEventListener("click", function() {
+            var slot = parseInt(btn.getAttribute("data-slot"), 10);
+            if (photoOrderState.selectedIndex === null) {
+              photoOrderState.selectedIndex = slot;
+            } else if (photoOrderState.selectedIndex === slot) {
+              photoOrderState.selectedIndex = null;
+            } else {
+              var a = photoOrderState.selectedIndex;
+              var b = slot;
+              var o = photoOrderState.order;
+              var t = o[a];
+              o[a] = o[b];
+              o[b] = t;
+              photoOrderState.selectedIndex = null;
+            }
+            renderLevel2PhotoOrder();
+          });
+        });
+      }
+      var checkBtn = document.getElementById("photoOrderCheckBtn");
+      if (checkBtn) {
+        checkBtn.addEventListener("click", function() {
+          if (isOrderCorrect(photoOrderState.order, photoOrderState.photos)) {
+            photoOrderState.status = "correct!";
+          } else {
+            photoOrderState.status = "try again";
+          }
+          renderLevel2PhotoOrder();
+        });
+      }
+      var proceedBtn = document.getElementById("photoOrderProceedBtn");
+      if (proceedBtn) {
+        proceedBtn.addEventListener("click", function() {
+          var cb = photoOrderState.onComplete;
+          if (typeof cb === "function") cb();
+        });
+      }
+      view.querySelectorAll(".photo-order-card img").forEach(function(img) {
+        img.onerror = function() {
+          var jpg = this.getAttribute("data-fallback-jpg");
+          var png = this.getAttribute("data-fallback-png");
+          if (jpg && this.src !== jpg) {
+            this.src = jpg;
+          } else if (png && this.src !== png) {
+            this.src = png;
+          }
+        };
       });
     }
 
@@ -1825,7 +2041,7 @@
         }
       } else if (currentMode === "level2") {
         // Skip to next screen in Level 2
-        const screens = ["countdown", "loading", "video", "pin", "gift", "giftLoading", "confirmation"];
+        const screens = ["countdown", "loading", "video", "pin", "photoOrder", "gift", "giftLoading", "confirmation"];
         const currentIndex = screens.indexOf(level2State.screen);
         if (currentIndex < screens.length - 1) {
           level2State.screen = screens[currentIndex + 1];
