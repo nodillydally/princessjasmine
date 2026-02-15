@@ -641,6 +641,9 @@
       object-fit: cover;
       display: block;
     }
+    .photo-order-card img[data-failed="true"] {
+      display: none;
+    }
     .photo-order-badge {
       position: absolute;
       bottom: 4px;
@@ -913,7 +916,7 @@
     // ====== PHOTO ORDERING GAME ======
     // How to plug in real photos: pass opts.photos = Array of { id, src, alt? }. IDs determine
     // correct order: ascending by id (numeric or string). E.g. buildPhotoOrderPhotos() builds
-    // from assets/valentine/1.jpeg..N.jpeg; put your files in assets/valentine/ and set
+    // from ./assets/valentine/1.jpeg (or .jpg/.png); or put 1.jpeg etc. in ./assets/; set
     // PHOTO_ORDER_COUNT. Correctness: current grid order (by position) must match photos sorted
     // by id high to low; getCorrectOrder(photos) returns that expected id list.
     function getCorrectOrder(photos) {
@@ -947,9 +950,13 @@
         const photo = photos[photoIndex];
         const oneBased = position + 1;
         const selected = selectedIndex === position ? " selected" : "";
+        var fallbackJpg = (photo.fallbackJpg != null ? photo.fallbackJpg : photo.src.replace(/\.jpeg$/i, ".jpg"));
+        var fallbackPng = (photo.fallbackPng != null ? photo.fallbackPng : photo.src.replace(/\.jpe?g$/i, ".png"));
+        var altUrls = photo.fallbackNoSubdir || [];
+        var fallbackList = [fallbackJpg, fallbackPng].concat(altUrls).filter(Boolean).join(" ");
         return (
           '<button type="button" class="photo-order-card' + selected + '" data-slot="' + position + '" aria-label="Photo position ' + oneBased + ', swap to reorder">' +
-            '<img src="' + escapeHtml(photo.src) + '" alt="' + escapeHtml(photo.alt || "Photo " + oneBased) + '" data-fallback-jpg="' + escapeHtml(photo.src.replace(/\.jpeg$/i, ".jpg")) + '" data-fallback-png="' + escapeHtml(photo.src.replace(/\.jpe?g$/i, ".png")) + '">' +
+            '<img src="' + escapeHtml(photo.src) + '" alt="' + escapeHtml(photo.alt || "Photo " + oneBased) + '" data-fallback-list="' + escapeHtml(fallbackList) + '">' +
             '<span class="photo-order-badge" aria-hidden="true">' + oneBased + '</span>' +
           '</button>'
         );
@@ -969,12 +976,20 @@
       );
     }
 
-    // Build photos for the game (used by renderLevel2PhotoOrder). Put 1.jpeg..N in assets/valentine/.
-    var PHOTO_ORDER_COUNT = 6;
+    // Build photos for the game (used by renderLevel2PhotoOrder).
+    // Paths: try ./assets/valentine/ first, then ./assets/ (so photos can live in either folder).
+    var PHOTO_ORDER_COUNT = 9;
     function buildPhotoOrderPhotos() {
       return Array.from({ length: PHOTO_ORDER_COUNT }, function(_, i) {
         var n = i + 1;
-        return { id: n, src: "assets/valentine/" + n + ".jpeg", alt: "Photo " + n };
+        return {
+          id: n,
+          src: "./assets/valentine/" + n + ".jpeg",
+          alt: "Photo " + n,
+          fallbackJpg: "./assets/valentine/" + n + ".jpg",
+          fallbackPng: "./assets/valentine/" + n + ".png",
+          fallbackNoSubdir: [ "./assets/" + n + ".jpeg", "./assets/" + n + ".jpg", "./assets/" + n + ".png" ]
+        };
       });
     }
 
@@ -1695,7 +1710,7 @@
       var opts = {
         photos: photoOrderState.photos,
         title: "Memory Lane: Put These in Order",
-        description: "Arrange the photos from highest to lowest (newest to oldest).",
+        description: "FaceTime me before you play! Then arrange the photos from highest to lowest (newest to oldest).",
         hintText: "No hints."
       };
       view.innerHTML = renderPhotoOrderingGame(opts);
@@ -1745,12 +1760,13 @@
       }
       view.querySelectorAll(".photo-order-card img").forEach(function(img) {
         img.onerror = function() {
-          var jpg = this.getAttribute("data-fallback-jpg");
-          var png = this.getAttribute("data-fallback-png");
-          if (jpg && this.src !== jpg) {
-            this.src = jpg;
-          } else if (png && this.src !== png) {
-            this.src = png;
+          var list = (this.getAttribute("data-fallback-list") || "").split(" ").filter(Boolean);
+          var tryIndex = parseInt(this.getAttribute("data-try-index") || "0", 10);
+          if (tryIndex < list.length) {
+            this.src = list[tryIndex];
+            this.setAttribute("data-try-index", String(tryIndex + 1));
+          } else {
+            this.setAttribute("data-failed", "true");
           }
         };
       });
