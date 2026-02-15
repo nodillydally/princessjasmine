@@ -612,6 +612,9 @@
       grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
       gap: 12px;
       margin-top: 12px;
+      max-height: 60vh;
+      overflow-y: auto;
+      padding-right: 4px;
     }
     .photo-order-card {
       aspect-ratio: 3 / 4;
@@ -794,7 +797,7 @@
 
     // ====== LEVEL 2 STATE ======
     const level2State = {
-      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "photoOrder" | "gift" | "giftLoading" | "confirmation"
+      screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "photoOrderIntro" | "photoOrder" | "gift" | "giftLoading" | "confirmation"
       giftChoice: localStorage.getItem("level2_gift_choice") || null
     };
 
@@ -978,7 +981,7 @@
 
     // Build photos for the game (used by renderLevel2PhotoOrder).
     // Paths: try ./assets/valentine/ first, then ./assets/ (so photos can live in either folder).
-    var PHOTO_ORDER_COUNT = 9;
+    var PHOTO_ORDER_COUNT = 10;
     function buildPhotoOrderPhotos() {
       return Array.from({ length: PHOTO_ORDER_COUNT }, function(_, i) {
         var n = i + 1;
@@ -1478,6 +1481,8 @@
         renderLevel2Video();
       } else if (level2State.screen === "pin") {
         renderLevel2Pin();
+      } else if (level2State.screen === "photoOrderIntro") {
+        renderLevel2PhotoOrderIntro();
       } else if (level2State.screen === "photoOrder") {
         renderLevel2PhotoOrder();
       } else if (level2State.screen === "gift") {
@@ -1683,7 +1688,7 @@
 
       submitBtn.addEventListener("click", () => {
         if (input.value === LEVEL2_PIN) {
-          level2State.screen = "photoOrder";
+          level2State.screen = "photoOrderIntro";
           renderLevel2();
         } else {
           errorEl.textContent = "Incorrect code. Try again.";
@@ -1696,6 +1701,28 @@
       
       hintBtn.addEventListener("click", () => {
         hintMsg.textContent = "you thought";
+      });
+    }
+
+    function renderLevel2PhotoOrderIntro() {
+      view.innerHTML = `
+        <h1>A Message for You</h1>
+
+        <div class="panel" style="text-align: left;">
+          <p style="margin-bottom: 14px;">Hey beautiful,</p>
+          <p style="margin-bottom: 14px;">Hope you like the flowers! There's way too much lore that went into getting you that bouquet haha. What you should know is there's more to it that I couldn't get to you but I will when I see you.</p>
+          <p style="margin-bottom: 14px;">In the meantime, take a shot at this game for a very special prize but facetime me when you think you've figured it out! ❤️❤️❤️</p>
+          <p style="margin-bottom: 0; text-align: right; font-style: italic;">Love, Jason</p>
+          
+          <div class="row" style="margin-top: 20px; justify-content: center;">
+            <button class="btn good" id="continueToGame">Continue to Game</button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("continueToGame").addEventListener("click", () => {
+        level2State.screen = "photoOrder";
+        renderLevel2();
       });
     }
 
@@ -2057,7 +2084,7 @@
         }
       } else if (currentMode === "level2") {
         // Skip to next screen in Level 2
-        const screens = ["countdown", "loading", "video", "pin", "photoOrder", "gift", "giftLoading", "confirmation"];
+        const screens = ["countdown", "loading", "video", "pin", "photoOrderIntro", "photoOrder", "gift", "giftLoading", "confirmation"];
         const currentIndex = screens.indexOf(level2State.screen);
         if (currentIndex < screens.length - 1) {
           level2State.screen = screens[currentIndex + 1];
