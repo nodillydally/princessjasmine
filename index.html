@@ -666,6 +666,53 @@
     }
     .photo-order-status.correct { color: var(--good); }
     .photo-order-status.try-again { color: var(--warn); }
+    .photo-order-card.hint-correct {
+      border-color: var(--good);
+      box-shadow: 0 0 16px rgba(143, 255, 163, 0.5), 0 0 0 3px var(--good);
+    }
+    .photo-order-card.hint-wrong {
+      border-color: #e85c5c;
+      box-shadow: 0 0 16px rgba(232, 92, 92, 0.4), 0 0 0 3px #e85c5c;
+    }
+    .photo-order-loading-overlay {
+      position: absolute;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 10;
+      border-radius: 0;
+    }
+    .photo-order-loading-overlay .photo-order-spinner {
+      width: 48px;
+      height: 48px;
+      border: 3px solid var(--border);
+      border-top-color: var(--accent);
+      animation: spin 0.9s linear infinite;
+      margin-bottom: 12px;
+    }
+    .photo-order-loading-overlay p {
+      margin: 0;
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .photo-order-celebration {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 10003;
+    }
+    .photo-order-celebration-particle {
+      position: absolute;
+      font-size: 24px;
+      animation: photoOrderCelebrate 2s ease-out forwards;
+    }
+    @keyframes photoOrderCelebrate {
+      0% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+      100% { transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.4); opacity: 0; }
+    }
 
     /* Mobile responsive adjustments */
     @media (max-width: 640px) {
@@ -808,7 +855,11 @@
       order: [],
       selectedIndex: null,
       status: null, // null | "correct!" | "try again"
-      photos: []
+      photos: [],
+      loading: true,
+      awaitingHintPick: false,
+      hintCheckedPosition: null, // position that was hint-checked (one card only)
+      hintCorrect: null         // true = green, false = red
     };
 
     const view = document.getElementById("view");
@@ -947,31 +998,43 @@
       const order = photoOrderState.order;
       const selectedIndex = photoOrderState.selectedIndex;
       const status = photoOrderState.status;
+      const hintCheckedPosition = opts.hintCheckedPosition;
+      const hintCorrect = opts.hintCorrect;
+      const loading = opts.loading === true;
+      const awaitingHintPick = opts.awaitingHintPick === true;
       const statusClass = status === "correct!" ? "correct" : status === "try again" ? "try-again" : "";
-      const statusMsg = status === "correct!" ? "Correct! Well done." : status === "try again" ? "Not quite right. Try again!" : "";
+      var statusMsg = status === "correct!" ? "Correct! Well done." : status === "try again" ? "Not quite right. Try again!" : "";
+      if (!status && awaitingHintPick) statusMsg = "Click a card to check if it's in the right spot.";
+      else if (!status && hintCheckedPosition !== null && hintCheckedPosition !== undefined) statusMsg = (hintCorrect ? "That one is in the right place!" : "That one is in the wrong place.");
+      const correctIds = getCorrectOrder(photos);
       const cardsHtml = order.map(function(photoIndex, position) {
         const photo = photos[photoIndex];
         const oneBased = position + 1;
         const selected = selectedIndex === position ? " selected" : "";
+        const isHintChecked = hintCheckedPosition === position;
+        const hintClass = isHintChecked && hintCorrect === true ? " hint-correct" : isHintChecked && hintCorrect === false ? " hint-wrong" : "";
         var fallbackJpg = (photo.fallbackJpg != null ? photo.fallbackJpg : photo.src.replace(/\.jpeg$/i, ".jpg"));
         var fallbackPng = (photo.fallbackPng != null ? photo.fallbackPng : photo.src.replace(/\.jpe?g$/i, ".png"));
         var altUrls = photo.fallbackNoSubdir || [];
         var fallbackList = [fallbackJpg, fallbackPng].concat(altUrls).filter(Boolean).join(" ");
         return (
-          '<button type="button" class="photo-order-card' + selected + '" data-slot="' + position + '" aria-label="Photo position ' + oneBased + ', swap to reorder">' +
+          '<button type="button" class="photo-order-card' + selected + hintClass + '" data-slot="' + position + '" aria-label="Photo position ' + oneBased + ', swap to reorder">' +
             '<img src="' + escapeHtml(photo.src) + '" alt="' + escapeHtml(photo.alt || "Photo " + oneBased) + '" data-fallback-list="' + escapeHtml(fallbackList) + '">' +
             '<span class="photo-order-badge" aria-hidden="true">' + oneBased + '</span>' +
           '</button>'
         );
       }).join("");
+      var loadingHtml = loading ? '<div class="photo-order-loading-overlay" id="photoOrderLoadingOverlay"><div class="photo-order-spinner" aria-hidden="true"></div><p>Loading photos…</p></div>' : '';
       return (
         '<h1>' + escapeHtml(title) + '</h1>' +
         '<p>' + escapeHtml(description) + '</p>' +
         '<p class="pill" style="margin-bottom:8px;">' + escapeHtml(hintText) + '</p>' +
-        '<div class="panel">' +
+        '<div class="panel" style="position: relative;">' +
+          loadingHtml +
           '<div class="photo-order-grid" role="group" aria-label="Photo grid">' + cardsHtml + '</div>' +
           '<div class="photo-order-status ' + statusClass + '" id="photoOrderStatus">' + escapeHtml(statusMsg) + '</div>' +
           '<div class="row" style="margin-top:12px; flex-wrap: wrap; gap: 10px;">' +
+            '<button type="button" class="btn" id="photoOrderHintBtn">Hint</button>' +
             '<button type="button" class="btn primary" id="photoOrderCheckBtn">Check Order</button>' +
             (status === "correct!" ? '<button type="button" class="btn good" id="photoOrderProceedBtn">Proceed</button>' : '') +
           '</div>' +
@@ -983,15 +1046,17 @@
     // Paths: try ./assets/valentine/ first, then ./assets/ (so photos can live in either folder).
     var PHOTO_ORDER_COUNT = 10;
     function buildPhotoOrderPhotos() {
+      var cacheBust = "?v=" + (typeof Date.now === "function" ? Date.now() : 1);
       return Array.from({ length: PHOTO_ORDER_COUNT }, function(_, i) {
         var n = i + 1;
+        var num = String(n);
         return {
           id: n,
-          src: "./assets/valentine/" + n + ".jpeg",
-          alt: "Photo " + n,
-          fallbackJpg: "./assets/valentine/" + n + ".jpg",
-          fallbackPng: "./assets/valentine/" + n + ".png",
-          fallbackNoSubdir: [ "./assets/" + n + ".jpeg", "./assets/" + n + ".jpg", "./assets/" + n + ".png" ]
+          src: "./assets/valentine/" + num + ".jpeg" + cacheBust,
+          alt: "Photo " + num,
+          fallbackJpg: "./assets/valentine/" + num + ".jpg",
+          fallbackPng: "./assets/valentine/" + num + ".png",
+          fallbackNoSubdir: [ "./assets/" + num + ".jpeg", "./assets/" + num + ".jpg", "./assets/" + num + ".png" ]
         };
       });
     }
@@ -1726,6 +1791,32 @@
       });
     }
 
+    function photoOrderCelebration(container) {
+      var el = document.createElement("div");
+      el.className = "photo-order-celebration";
+      var rect = container && container.getBoundingClientRect ? container.getBoundingClientRect() : null;
+      var centerX = rect ? rect.left + rect.width / 2 : window.innerWidth / 2;
+      var centerY = rect ? rect.top + rect.height / 2 : window.innerHeight / 2;
+      var emojis = ["💖", "💗", "❤️", "💕", "💘", "💝", "✨", "🌟"];
+      for (var i = 0; i < 36; i++) {
+        var angle = (Math.PI * 2 * i) / 36 + Math.random() * 0.5;
+        var dist = 80 + Math.random() * 120;
+        var tx = Math.cos(angle) * dist - 50;
+        var ty = Math.sin(angle) * dist - 50;
+        var p = document.createElement("div");
+        p.className = "photo-order-celebration-particle";
+        p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        p.style.left = centerX + "px";
+        p.style.top = centerY + "px";
+        p.style.setProperty("--tx", tx + "px");
+        p.style.setProperty("--ty", ty + "px");
+        p.style.animationDelay = (Math.random() * 0.2) + "s";
+        el.appendChild(p);
+      }
+      document.body.appendChild(el);
+      setTimeout(function() { el.remove(); }, 2200);
+    }
+
     function renderLevel2PhotoOrder() {
       var photos = buildPhotoOrderPhotos();
       if (photoOrderState.order.length !== photos.length) {
@@ -1733,23 +1824,42 @@
         photoOrderState.order = shuffleArray(Array.from({ length: photos.length }, function(_, i) { return i; }));
         photoOrderState.selectedIndex = null;
         photoOrderState.status = null;
+        photoOrderState.awaitingHintPick = false;
+        photoOrderState.hintCheckedPosition = null;
+        photoOrderState.hintCorrect = null;
+        photoOrderState.loading = true;
       }
       var opts = {
         photos: photoOrderState.photos,
         title: "Memory Lane: Put These in Order",
         description: "FaceTime me before you play! Then arrange the photos from highest to lowest (newest to oldest).",
-        hintText: "No hints."
+        hintText: "No hints.",
+        awaitingHintPick: photoOrderState.awaitingHintPick,
+        hintCheckedPosition: photoOrderState.hintCheckedPosition,
+        hintCorrect: photoOrderState.hintCorrect,
+        loading: photoOrderState.loading
       };
       view.innerHTML = renderPhotoOrderingGame(opts);
       photoOrderState.onComplete = function() {
         level2State.screen = "gift";
         renderLevel2();
       };
+      var correctIds = getCorrectOrder(photoOrderState.photos);
       var grid = view.querySelector(".photo-order-grid");
       if (grid) {
         grid.querySelectorAll(".photo-order-card").forEach(function(btn) {
           btn.addEventListener("click", function() {
             var slot = parseInt(btn.getAttribute("data-slot"), 10);
+            if (photoOrderState.awaitingHintPick) {
+              photoOrderState.awaitingHintPick = false;
+              photoOrderState.hintCheckedPosition = slot;
+              var currentId = photoOrderState.photos[photoOrderState.order[slot]].id;
+              photoOrderState.hintCorrect = currentId === correctIds[slot];
+              renderLevel2PhotoOrder();
+              return;
+            }
+            photoOrderState.hintCheckedPosition = null;
+            photoOrderState.hintCorrect = null;
             if (photoOrderState.selectedIndex === null) {
               photoOrderState.selectedIndex = slot;
             } else if (photoOrderState.selectedIndex === slot) {
@@ -1767,11 +1877,21 @@
           });
         });
       }
+      var hintBtn = document.getElementById("photoOrderHintBtn");
+      if (hintBtn) {
+        hintBtn.addEventListener("click", function() {
+          photoOrderState.awaitingHintPick = true;
+          photoOrderState.hintCheckedPosition = null;
+          photoOrderState.hintCorrect = null;
+          renderLevel2PhotoOrder();
+        });
+      }
       var checkBtn = document.getElementById("photoOrderCheckBtn");
       if (checkBtn) {
         checkBtn.addEventListener("click", function() {
           if (isOrderCorrect(photoOrderState.order, photoOrderState.photos)) {
             photoOrderState.status = "correct!";
+            photoOrderCelebration(view);
           } else {
             photoOrderState.status = "try again";
           }
@@ -1785,7 +1905,17 @@
           if (typeof cb === "function") cb();
         });
       }
-      view.querySelectorAll(".photo-order-card img").forEach(function(img) {
+      var imgs = view.querySelectorAll(".photo-order-card img");
+      var loadedCount = 0;
+      var targetCount = imgs.length;
+      function maybeHideLoading() {
+        loadedCount++;
+        if (loadedCount >= targetCount && photoOrderState.loading) {
+          photoOrderState.loading = false;
+          renderLevel2PhotoOrder();
+        }
+      }
+      imgs.forEach(function(img) {
         img.onerror = function() {
           var list = (this.getAttribute("data-fallback-list") || "").split(" ").filter(Boolean);
           var tryIndex = parseInt(this.getAttribute("data-try-index") || "0", 10);
@@ -1794,9 +1924,23 @@
             this.setAttribute("data-try-index", String(tryIndex + 1));
           } else {
             this.setAttribute("data-failed", "true");
+            maybeHideLoading();
           }
         };
+        if (img.complete && img.naturalWidth) {
+          maybeHideLoading();
+        } else {
+          img.onload = maybeHideLoading;
+        }
       });
+      if (photoOrderState.loading) {
+        setTimeout(function() {
+          if (photoOrderState.loading) {
+            photoOrderState.loading = false;
+            renderLevel2PhotoOrder();
+          }
+        }, 2500);
+      }
     }
 
     function renderLevel2Gift() {
@@ -1827,7 +1971,7 @@
                            background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('./assets/mystery.png') center/cover;
                            display: flex; flex-direction: column; justify-content: flex-end; align-items: center;
                            text-align: center; padding: 16px;">
-              <strong style="font-size: 15px;">Local Co-op Mode</strong><br/>
+              <strong style="font-size: 15px;">Toronto Mystery Mode</strong><br/>
               <span style="font-size: 11px; opacity: 0.8;">Do not skip class</span>
             </button>
           </div>
@@ -1865,7 +2009,7 @@
       const giftNames = {
         snowmobile: "Snowmobile Day",
         spa: "Spa Day",
-        coop: "Local Co-op Mode"
+        coop: "Toronto Mystery Mode"
       };
       const chosenName = giftNames[level2State.giftChoice] || level2State.giftChoice;
 
@@ -1888,7 +2032,7 @@
       const giftNames = {
         snowmobile: "Snowmobile Day",
         spa: "Spa Day",
-        coop: "Local Co-op Mode"
+        coop: "Toronto Mystery Mode"
       };
       const giftImages = {
         snowmobile: "./assets/snowmobile.png",
