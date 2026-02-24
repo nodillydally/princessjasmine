@@ -445,6 +445,12 @@
     .floating-heart-mouse-wrap:nth-child(2) { left: 72%; top: 20%; width: 90px; height: 90px; }
     .floating-heart-mouse-wrap:nth-child(3) { left: 15%; top: 65%; width: 110px; height: 110px; }
     .floating-heart-mouse-wrap:nth-child(4) { left: 68%; top: 60%; width: 95px; height: 95px; }
+    .floating-heart-mouse-wrap:nth-child(5) { left: 42%; top: 8%; width: 85px; height: 85px; }
+    .floating-heart-mouse-wrap:nth-child(6) { left: 88%; top: 45%; width: 100px; height: 100px; }
+    .floating-heart-mouse-wrap:nth-child(7) { left: 5%; top: 42%; width: 90px; height: 90px; }
+    .floating-heart-mouse-wrap:nth-child(8) { left: 55%; top: 72%; width: 95px; height: 95px; }
+    .floating-heart-mouse-wrap:nth-child(9) { left: 28%; top: 35%; width: 88px; height: 88px; }
+    .floating-heart-mouse-wrap:nth-child(10) { left: 78%; top: 78%; width: 92px; height: 92px; }
     .floating-heart-photo-wrap {
       position: absolute;
       inset: 0;
@@ -465,6 +471,12 @@
     .floating-heart-mouse-wrap:nth-child(2) .floating-heart-photo-wrap { animation-delay: -4s; animation-duration: 20s; }
     .floating-heart-mouse-wrap:nth-child(3) .floating-heart-photo-wrap { animation-delay: -8s; animation-duration: 17s; }
     .floating-heart-mouse-wrap:nth-child(4) .floating-heart-photo-wrap { animation-delay: -2s; animation-duration: 19s; }
+    .floating-heart-mouse-wrap:nth-child(5) .floating-heart-photo-wrap { animation-delay: -1s; animation-duration: 18s; }
+    .floating-heart-mouse-wrap:nth-child(6) .floating-heart-photo-wrap { animation-delay: -5s; animation-duration: 15s; }
+    .floating-heart-mouse-wrap:nth-child(7) .floating-heart-photo-wrap { animation-delay: -3s; animation-duration: 19s; }
+    .floating-heart-mouse-wrap:nth-child(8) .floating-heart-photo-wrap { animation-delay: -6s; animation-duration: 17s; }
+    .floating-heart-mouse-wrap:nth-child(9) .floating-heart-photo-wrap { animation-delay: -2.5s; animation-duration: 16s; }
+    .floating-heart-mouse-wrap:nth-child(10) .floating-heart-photo-wrap { animation-delay: -7s; animation-duration: 20s; }
     @keyframes floatHeartPhoto {
       0%, 100% { transform: translate(0, 0) rotate(-3deg); }
       25% { transform: translate(15px, -20px) rotate(2deg); }
@@ -741,6 +753,125 @@
         .row .btn { width: 100%; }
       }
     }
+
+    /* Pattern Lock (Level 3) */
+    .pattern-grid {
+      position: relative;
+      width: 240px;
+      height: 240px;
+      margin: 16px auto;
+      touch-action: none;
+      user-select: none;
+    }
+    .pattern-dot {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      background: var(--screen);
+      transform: translate(-50%, -50%);
+      transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+      z-index: 2;
+    }
+    .pattern-dot.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 12px var(--phosphor-dim);
+    }
+    .pattern-dot.wrong {
+      background: var(--warn);
+      border-color: var(--warn);
+    }
+    .pattern-svg {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+    .pattern-svg line {
+      stroke: var(--accent);
+      stroke-width: 3;
+      stroke-linecap: round;
+    }
+    .pattern-svg line.wrong {
+      stroke: var(--warn);
+    }
+
+    /* Game Master cards (Level 3) */
+    .game-card {
+      border: 2px solid var(--border);
+      background: rgba(0,0,0,0.3);
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      flex-wrap: wrap;
+      transition: opacity 0.3s, border-color 0.3s;
+    }
+    .game-card.defeated {
+      opacity: 0.5;
+      border-color: var(--good);
+    }
+    .game-card-name {
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--text);
+      flex: 1;
+      min-width: 120px;
+    }
+    .game-card-actions {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    .code-progress {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 14px 0;
+      font-family: var(--mono);
+    }
+    .code-digit {
+      width: 40px;
+      height: 44px;
+      border: 2px solid var(--border);
+      background: rgba(0,0,0,0.4);
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--good);
+    }
+    .code-digit.empty {
+      color: var(--muted);
+    }
+
+    /* Credits roll (Level 3) */
+    .credits-viewport {
+      height: 220px;
+      overflow: hidden;
+      position: relative;
+      margin: 12px 0;
+      border: 2px solid var(--border);
+      background: rgba(0,0,0,0.4);
+    }
+    .credits-roll {
+      animation: creditsRoll 18s linear infinite;
+      will-change: transform;
+    }
+    .credits-roll-content {
+      padding: 12px 0;
+      text-align: center;
+      font-family: var(--mono);
+      font-size: 13px;
+      color: var(--muted);
+    }
+    .credits-roll-content p { margin: 8px 0; }
+    @keyframes creditsRoll {
+      0% { transform: translateY(0); }
+      100% { transform: translateY(-50%); }
+    }
   </style>
 </head>
 <body>
@@ -801,10 +932,25 @@
     const LEVEL2_VIDEO_SRC = "https://drive.google.com/uc?export=download&id=1giss6ZLbdXjyDWHjl0palJiJj9FqrHO5";
     const LEVEL2_PIN = "1424";
 
-    // Level 3 (Toronto Mystery Mode): SMS contact for "I'm Ready"
+    // Level 3 (Toronto Mystery Mode) configs
     const JASON_SMS_NUMBER = "+16477064400";
-    // Level 3: "I'M READY" button unlocks at 5:20 PM Toronto time (EST). Set date as needed.
     const LEVEL3_READY_AT_UTC_MS = Date.parse("2026-02-24T22:20:00Z"); // 5:20 PM Feb 24 Toronto (EST)
+    const LEVEL3_PATTERN = [0, 3, 6, 7, 8, 5, 2]; // U-shape (indices 0-8, left-to-right top-to-bottom)
+    const LEVEL3_FINAL_CODE = "321";
+    const LEVEL3_EMAIL = "ramsayj2001@gmail.com";
+    const LEVEL3_GAMES = [
+      { id: "makeword", name: "Make a word", link: "https://www.tiktok.com/@omayazein/video/7515560235382082846?q=couple%20games&t=1771963788245" },
+      { id: "sockgame", name: "Sock Game", link: "https://www.tiktok.com/@howtodadnz/video/7489204347620855047?q=couple%20games&t=1771963788245" },
+      { id: "21questions", name: "21 questions", link: null },
+      { id: "salsa", name: "Successfully learn a new salsa pattern", link: "https://www.youtube.com/shorts/H4hl6PDLypc" },
+      { id: "videogame", name: "A video game", link: "https://www.tiktok.com/@gamergirlgale/video/7155040674138672389?q=couple%20games&t=1771963788245" },
+      { id: "10game", name: "10 Game", link: "https://www.tiktok.com/@kristenandreafe/video/7610125578703785236?is_from_webapp=1&sender_device=pc" },
+      { id: "sayword", name: "Say the word on beat", link: "https://www.instagram.com/p/DSI3tz1EYWK/" },
+      { id: "noarms", name: "no arms", link: "https://www.instagram.com/p/DSOLgxGkeR3/" },
+      { id: "ballegg", name: "Ball Egg", link: "https://www.instagram.com/p/DTETDobDxkv/" },
+      { id: "yoga", name: "Yoga Challenge", link: "https://www.tiktok.com/@ruben_livi_vlogs/video/7592824113987669262?q=couple%20challenge%20yoga&t=1771964765210" },
+      { id: "dontopenreyes", name: "Dont open your eyes at the same time", link: "https://www.instagram.com/p/DEi1a4sPTz7/" }
+    ];
 
     const LEVELS = [
       {
@@ -857,7 +1003,12 @@
 
     // ====== LEVEL 3 STATE ======
     const level3State = {
-      transportRequested: false
+      screen: "missionBrief", // "missionBrief" | "loading" | "patternLock" | "gameMaster" | "completed"
+      transportRequested: false,
+      wins: JSON.parse(localStorage.getItem("level3_wins") || "[]"),
+      revealedDigits: JSON.parse(localStorage.getItem("level3_revealed_digits") || "[]"), // you enter each digit when a game is won
+      patternUnlocked: localStorage.getItem("level3_pattern_unlocked") === "1",
+      completed: localStorage.getItem("level3_completed") === "1"
     };
 
     // ====== PHOTO ORDERING GAME STATE ======
@@ -975,6 +1126,13 @@
       cleanupIntervals();
       currentMode = "level3";
       setTheme("level3");
+      if (level3State.completed) {
+        level3State.screen = "completed";
+      } else if (level3State.patternUnlocked) {
+        level3State.screen = "gameMaster";
+      } else {
+        level3State.screen = "missionBrief";
+      }
       renderLevel3();
     }
 
@@ -1245,12 +1403,12 @@
           "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
           "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
         ];
+        const heartPhotosHtml = Array.from({ length: 10 }, (_, i) =>
+          `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
+        ).join("\n            ");
         popupOverlay.innerHTML = `
           <div class="floating-heart-photos" aria-hidden="true">
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
+            ${heartPhotosHtml}
           </div>
           <div class="success-popup">
             <h2>✅ Access granted. Welcome, Mi Reina</h2>
@@ -2105,14 +2263,14 @@
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
       ];
+      const heartPhotosHtmlL2 = Array.from({ length: 10 }, (_, i) =>
+        `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
+      ).join("\n            ");
 
       view.innerHTML = `
         <div style="position: relative;">
           <div class="floating-heart-photos" aria-hidden="true" style="z-index: 10;">
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
-            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
+            ${heartPhotosHtmlL2}
           </div>
           
           <h1 class="confirmation-title">Clear Your Calendar on FEB 24</h1>
@@ -2196,7 +2354,7 @@
       });
     }
 
-    // ====== LEVEL 3: MISSION BRIEF (Toronto Mystery Mode) ======
+    // ====== LEVEL 3: TORONTO MYSTERY MODE ======
     function formatLevel3Countdown(ms) {
       if (ms <= 0) return "00:00:00";
       const hours = Math.floor(ms / 3600000);
@@ -2205,48 +2363,118 @@
       return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
     }
 
+    function greenBurst(container) {
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight / 2;
+      const emojis = ["💚", "✨", "🟢", "🍀", "⭐"];
+      const count = 40;
+      const burstEl = document.createElement("div");
+      burstEl.className = "emoji-burst-overlay";
+      burstEl.style.position = "fixed";
+      burstEl.style.inset = "0";
+      burstEl.style.pointerEvents = "none";
+      burstEl.style.zIndex = "10001";
+      for (let i = 0; i < count; i++) {
+        const angle = (Math.PI * 2 * i) / count + Math.random() * 0.6;
+        const dist = 100 + Math.random() * 200;
+        const tx = Math.cos(angle) * dist;
+        const ty = Math.sin(angle) * dist - 30;
+        const p = document.createElement("div");
+        p.className = "emoji-burst-particle";
+        p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+        p.style.left = centerX + "px";
+        p.style.top = centerY + "px";
+        p.style.setProperty("--tx", tx + "px");
+        p.style.setProperty("--ty", ty + "px");
+        p.style.animationDelay = Math.random() * 0.2 + "s";
+        burstEl.appendChild(p);
+      }
+      (container || document.body).appendChild(burstEl);
+      setTimeout(() => burstEl.remove(), 2200);
+    }
+
+    function saveLevel3() {
+      localStorage.setItem("level3_wins", JSON.stringify(level3State.wins));
+      localStorage.setItem("level3_revealed_digits", JSON.stringify(level3State.revealedDigits));
+      localStorage.setItem("level3_pattern_unlocked", level3State.patternUnlocked ? "1" : "0");
+      localStorage.setItem("level3_completed", level3State.completed ? "1" : "0");
+    }
+
+    // ====== LEVEL 3 RENDER ROUTER ======
     function renderLevel3() {
       stepPill.textContent = "Level 3";
       const homeBtn = document.getElementById("homeBtn");
       const skipBtn = document.getElementById("skipBtn");
       if (homeBtn) homeBtn.style.display = "";
-      if (skipBtn) skipBtn.style.display = "none";
+      if (skipBtn) {
+        skipBtn.style.display = (level3State.screen === "missionBrief" || level3State.screen === "completed") ? "none" : "";
+      }
 
+      if (level3State.screen === "missionBrief") renderLevel3MissionBrief();
+      else if (level3State.screen === "loading") renderLevel3Loading();
+      else if (level3State.screen === "patternLock") renderLevel3PatternLock();
+      else if (level3State.screen === "gameMaster") renderLevel3GameMaster();
+      else if (level3State.screen === "completed") renderLevel3Completed();
+    }
+
+    // ---- A) Mission Brief ----
+    function renderLevel3MissionBrief() {
       const now = Date.now();
       const timeLeft = LEVEL3_READY_AT_UTC_MS - now;
       const unlocked = timeLeft <= 0;
-      const transportStatus = level3State.transportRequested ? "Transport: requested" : "";
+      const transportStatus = level3State.transportRequested ? "Transport: requested" : "Transport: pending";
       const countdownText = unlocked ? "" : formatLevel3Countdown(timeLeft);
 
       view.innerHTML = `
         <h1>Mission Brief (Toronto Mystery Mode)</h1>
         <div class="panel">
           <ul style="margin: 0 0 14px 0; padding-left: 20px; font-family: var(--mono); color: var(--text); font-size: 14px; line-height: 1.8;">
-            <li>Be ready: 5:30 - 5:45PM</li>
-            <li>Dress code: cute black dress (not too fancy - like 7/10) </li>
-            <li>Bring: overnight bag (next-day outfit + basic toiletries)</li>
+            <li>Be ready: 5:30 PM</li>
+            <li>Dress code: cute dress (not too fancy)</li>
+            <li>Bring: overnight bag (next-day outfit + toiletries)</li>
             <li>Bring also: a medium-sized rock</li>
+            <li>Come hungry</li>
+            <li>FYI: Jason is business casual</li>
           </ul>
           <p style="font-size: 12px; color: var(--muted); margin: 0 0 14px 0;">Only press I'M READY when you are ready to leave (5:30–5:45).</p>
           <div class="statusline" style="margin-top: 12px;">
-            <span id="level3TransportStatus">${transportStatus}</span>
+            <span id="level3TransportStatus" class="badge">${transportStatus}</span>
           </div>
           ${unlocked ? "" : `<p style="margin: 16px 0 8px 0; font-family: var(--mono); font-size: 14px; color: var(--warn); text-align: center;">Button unlocks at 5:20 PM — <span id="level3Countdown">${countdownText}</span></p>`}
           <button class="btn primary" id="level3ReadyBtn" style="margin-top: 8px; width: 100%; font-size: 14px;" ${unlocked ? "" : "disabled"}>${unlocked ? "I'M READY 🟢" : "🔒 I'M READY 🟢"}</button>
           <p style="text-align: center; margin-top: 10px; margin-bottom: 0;">
             <a href="https://www.youtube.com/watch?v=dQw4w9WgXcQ" target="_blank" rel="noopener noreferrer" class="btn" style="font-size: 11px; padding: 6px 10px; opacity: 0.8;">NO I CANT WAIT GIVE ME THE BYPASS</a>
           </p>
+          <div style="margin-top: 14px; display: flex; gap: 8px; align-items: center;">
+            <input type="text" id="level3SkipPw" placeholder="skip pw" style="font-family:var(--mono);padding:5px 8px;background:rgba(0,0,0,0.4);border:1px solid var(--border);color:var(--muted);font-size:11px;width:90px;opacity:0.5;" />
+            <button class="btn" id="level3SkipBtn" style="font-size:10px;padding:4px 8px;opacity:0.5;">skip</button>
+          </div>
+          <p id="level3SkipErr" style="min-height:16px;font-size:11px;margin-top:4px;"></p>
         </div>
       `;
+
+      document.getElementById("level3SkipBtn").addEventListener("click", () => {
+        const pw = document.getElementById("level3SkipPw").value;
+        if (pw === "123") {
+          level3State.transportRequested = true;
+          greenBurst(document.body);
+          level3State.screen = "loading";
+          setTimeout(() => renderLevel3(), 800);
+        } else {
+          const err = document.getElementById("level3SkipErr");
+          if (err) { err.style.color = "var(--warn)"; err.textContent = "nope"; }
+        }
+      });
 
       const readyBtn = document.getElementById("level3ReadyBtn");
       if (unlocked) {
         readyBtn.addEventListener("click", () => {
-          const body = encodeURIComponent("READY 🟢");
-          window.location.href = `sms:${JASON_SMS_NUMBER}?&body=${body}`;
           level3State.transportRequested = true;
           const statusEl = document.getElementById("level3TransportStatus");
           if (statusEl) statusEl.textContent = "Transport: requested";
+          greenBurst(document.body);
+          level3State.screen = "loading";
+          setTimeout(() => renderLevel3(), 800);
         });
       } else {
         countdownInterval = setInterval(() => {
@@ -2261,6 +2489,330 @@
           }
         }, 1000);
       }
+    }
+
+    // ---- B) Loading screen (after I'M READY) ----
+    function renderLevel3Loading() {
+      view.innerHTML = `
+        <div class="loadingWrap">
+          <div class="spinner" aria-hidden="true"></div>
+          <h1>Transport request received</h1>
+          <p>Routing…</p>
+          <p style="font-size: 12px;">Please proceed.</p>
+        </div>
+      `;
+      const delay = 1500 + Math.random() * 1000;
+      setTimeout(() => {
+        if (currentMode !== "level3" || level3State.screen !== "loading") return;
+        const subject = encodeURIComponent("TRANSPORT REQUEST: Local Co-op Mode");
+        const body = encodeURIComponent("I'M READY. Please proceed. 🟢");
+        window.location.href = `mailto:${LEVEL3_EMAIL}?subject=${subject}&body=${body}`;
+        setTimeout(() => {
+          if (currentMode !== "level3") return;
+          level3State.screen = "patternLock";
+          renderLevel3();
+        }, 600);
+      }, delay);
+    }
+
+    // ---- C) Pattern Lock ----
+    function renderLevel3PatternLock() {
+      const dotPositions = [];
+      for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+          dotPositions.push({ x: 40 + c * 80, y: 40 + r * 80 });
+        }
+      }
+
+      view.innerHTML = `
+        <h1>Transport Requested - Arriving Shortly</h1>
+        <p>A pass key will be provided by the host upon arrival.</p>
+        <p style="font-size: 12px; color: var(--muted);"> </p>
+
+        <div class="panel" style="display: flex; flex-direction: column; align-items: center;">
+          <div class="pattern-grid" id="patternGrid">
+            <svg class="pattern-svg" id="patternSvg" viewBox="0 0 240 240"></svg>
+            ${dotPositions.map((d, i) => `<div class="pattern-dot" data-idx="${i}" style="left:${d.x}px;top:${d.y}px;"></div>`).join("")}
+          </div>
+          <p id="patternMsg" style="min-height: 22px; font-size: 13px; margin-top: 10px; text-align: center;"></p>
+        </div>
+      `;
+
+      const grid = document.getElementById("patternGrid");
+      const svg = document.getElementById("patternSvg");
+      const msg = document.getElementById("patternMsg");
+      const dots = grid.querySelectorAll(".pattern-dot");
+      let selected = [];
+      let drawing = false;
+      let locked = false;
+
+      function getDotCenter(idx) { return dotPositions[idx]; }
+
+      function hitTest(px, py) {
+        const rect = grid.getBoundingClientRect();
+        const x = px - rect.left;
+        const y = py - rect.top;
+        for (let i = 0; i < 9; i++) {
+          const d = dotPositions[i];
+          if (Math.hypot(x - d.x, y - d.y) < 28) return i;
+        }
+        return -1;
+      }
+
+      function redrawLines(cls) {
+        svg.innerHTML = "";
+        for (let i = 1; i < selected.length; i++) {
+          const a = getDotCenter(selected[i - 1]);
+          const b = getDotCenter(selected[i]);
+          const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+          line.setAttribute("x1", a.x); line.setAttribute("y1", a.y);
+          line.setAttribute("x2", b.x); line.setAttribute("y2", b.y);
+          if (cls) line.classList.add(cls);
+          svg.appendChild(line);
+        }
+      }
+
+      function selectDot(idx) {
+        if (selected.includes(idx)) return;
+        selected.push(idx);
+        dots[idx].classList.add("active");
+        redrawLines();
+      }
+
+      function resetPattern() {
+        selected = [];
+        drawing = false;
+        locked = false;
+        dots.forEach(d => { d.classList.remove("active"); d.classList.remove("wrong"); });
+        svg.innerHTML = "";
+      }
+
+      function checkPattern() {
+        locked = true;
+        const correct = selected.length === LEVEL3_PATTERN.length &&
+          selected.every((v, i) => v === LEVEL3_PATTERN[i]);
+        if (correct) {
+          msg.textContent = "";
+          msg.style.color = "var(--good)";
+          greenBurst(document.body);
+          level3State.patternUnlocked = true;
+          saveLevel3();
+          setTimeout(() => {
+            level3State.screen = "gameMaster";
+            renderLevel3();
+          }, 900);
+        } else {
+          msg.textContent = "Access denied. Please proceed again.";
+          msg.style.color = "var(--warn)";
+          dots.forEach(d => { if (d.classList.contains("active")) d.classList.add("wrong"); });
+          redrawLines("wrong");
+          setTimeout(resetPattern, 600);
+          setTimeout(() => { msg.textContent = ""; }, 1800);
+        }
+      }
+
+      function onStart(e) {
+        if (locked) return;
+        e.preventDefault();
+        const pt = e.touches ? e.touches[0] : e;
+        const idx = hitTest(pt.clientX, pt.clientY);
+        if (idx >= 0) {
+          resetPattern();
+          drawing = true;
+          selectDot(idx);
+        }
+      }
+      function onMove(e) {
+        if (!drawing || locked) return;
+        e.preventDefault();
+        const pt = e.touches ? e.touches[0] : e;
+        const idx = hitTest(pt.clientX, pt.clientY);
+        if (idx >= 0) selectDot(idx);
+      }
+      function onEnd(e) {
+        if (!drawing || locked) return;
+        e.preventDefault();
+        drawing = false;
+        if (selected.length > 0) checkPattern();
+      }
+
+      grid.addEventListener("mousedown", onStart);
+      grid.addEventListener("mousemove", onMove);
+      grid.addEventListener("mouseup", onEnd);
+      grid.addEventListener("touchstart", onStart, { passive: false });
+      grid.addEventListener("touchmove", onMove, { passive: false });
+      grid.addEventListener("touchend", onEnd, { passive: false });
+    }
+
+    // ---- D) Game Master ----
+    // Expected digits when you click "We won": 1st = 3, 2nd = 2, 3rd = 1 (code 321).
+    function renderLevel3GameMaster() {
+      const wins = level3State.wins;
+      const digits = level3State.revealedDigits;
+      const digitError = level3State.digitError || "";
+
+      const codeHTML = [0, 1, 2].map(i =>
+        `<div class="code-digit ${i < digits.length ? "" : "empty"}">${i < digits.length ? digits[i] : "?"}</div>`
+      ).join("");
+
+      const gamesHTML = LEVEL3_GAMES.map(g => {
+        const defeated = wins.includes(g.id);
+        const linkBtn = g.link
+          ? `<a href="${g.link}" target="_blank" rel="noopener noreferrer" class="btn" style="font-size:11px;padding:4px 8px;">View example</a>`
+          : `<span style="font-size:11px;color:var(--muted);">No example</span>`;
+        const actionBtn = defeated
+          ? `<span class="badge good" style="font-size:11px;">Defeated ✅</span>`
+          : `<button class="btn good" data-game="${g.id}" style="font-size:11px;padding:4px 8px;">We won</button>`;
+        return `<div class="game-card ${defeated ? "defeated" : ""}">`
+          + `<span class="game-card-name">${escapeHtml(g.name)}</span>`
+          + `<div class="game-card-actions">${linkBtn}${actionBtn}</div></div>`;
+      }).join("");
+
+      view.innerHTML = `
+        <div class="panel" style="margin-bottom: 12px;">
+          <div class="code-progress">${codeHTML}</div>
+        </div>
+
+        <h1>Game Master</h1>
+        <p>Defeat 3 challenges to complete the mission.</p>
+
+        ${digitError ? `<p id="level3DigitError" style="color: var(--warn); font-size: 13px; margin-bottom: 8px;">${escapeHtml(digitError)}</p>` : ""}
+
+        <div style="display: flex; flex-direction: column; gap: 10px; max-height: 45vh; overflow-y: auto; padding-right: 4px;">
+          ${gamesHTML}
+        </div>
+      `;
+
+      view.querySelectorAll("button[data-game]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const gId = btn.dataset.game;
+          if (level3State.wins.includes(gId)) return;
+          if (level3State.revealedDigits.length >= 3) return;
+
+          level3State.digitError = "";
+          const expected = LEVEL3_FINAL_CODE[level3State.wins.length];
+          const raw = prompt("Enter the number for this win:");
+          const entered = raw != null ? String(raw).trim().charAt(0) : "";
+
+          if (entered !== expected) {
+            level3State.digitError = "Incorrect.";
+            saveLevel3();
+            renderLevel3GameMaster();
+            return;
+          }
+
+          level3State.wins.push(gId);
+          level3State.revealedDigits.push(entered);
+          saveLevel3();
+
+          if (level3State.revealedDigits.length >= 3) {
+            level3State.completed = true;
+            saveLevel3();
+            greenBurst(document.body);
+            setTimeout(() => greenBurst(document.body), 600);
+            setTimeout(() => {
+              level3State.screen = "completed";
+              renderLevel3();
+            }, 1000);
+          } else {
+            renderLevel3GameMaster();
+          }
+        });
+      });
+    }
+
+    // ---- E) Mission Completed ----
+    function renderLevel3Completed() {
+      greenBurst(document.body);
+      setTimeout(() => greenBurst(document.body), 1200);
+
+      const HEART_FALLBACKS = [
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-be3e6963-3769-459e-bfda-b6db74c2f20d.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-5cfe090b-3ca6-4dd2-9cf0-0762a1431a99.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
+        "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
+      ];
+      const heartPhotosHtmlL3 = Array.from({ length: 10 }, (_, i) =>
+        `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
+      ).join("\n            ");
+
+      const creditsBlock = `
+        <p style="font-size: 14px; color: var(--text); margin-bottom: 20px;">— Credits —</p>
+        <p><strong>Executive Producer</strong><br/>Jasmine</p>
+        <p><strong>Systems Engineer</strong><br/>Jason</p>
+        <p><strong>Location</strong><br/>Toronto</p>
+        <p><strong>Runtime</strong><br/>Third World</p>
+        <p style="margin-top: 24px;">Mission Completed ✅</p>
+      `;
+
+      view.innerHTML = `
+        <div style="position: relative;">
+          <div class="floating-heart-photos" aria-hidden="true" style="z-index: 10;">
+            ${heartPhotosHtmlL3}
+          </div>
+
+          <h1 style="text-align: center;">Mission Completed ✅</h1>
+          <p style="text-align: center;">Status: complete.<br/>You defeated the Game Master.</p>
+
+          <div class="credits-viewport">
+            <div class="credits-roll">
+              <div class="credits-roll-content">${creditsBlock}</div>
+              <div class="credits-roll-content">${creditsBlock}</div>
+            </div>
+          </div>
+
+          <button class="btn primary" id="level3ReturnBtn" style="width: 100%; margin-top: 12px;">Return to Levels</button>
+          <button class="btn" id="level3ResetBtn" style="width: 100%; margin-top: 8px; font-size: 11px; opacity: 0.7;">Reset Level 3</button>
+        </div>
+      `;
+
+      (function() {
+        var hearts = view.querySelectorAll(".floating-heart-mouse-wrap");
+        var radius = 140;
+        var strength = 38;
+        function onMove(e) {
+          var mx = e.clientX;
+          var my = e.clientY;
+          hearts.forEach(function(wrap) {
+            var r = wrap.getBoundingClientRect();
+            var cx = r.left + r.width / 2;
+            var cy = r.top + r.height / 2;
+            var dx = cx - mx;
+            var dy = cy - my;
+            var dist = Math.sqrt(dx * dx + dy * dy) || 1;
+            if (dist < radius) {
+              var push = (1 - dist / radius) * strength;
+              var tx = (dx / dist) * push;
+              var ty = (dy / dist) * push;
+              wrap.style.transform = "translate(" + tx + "px, " + ty + "px)";
+            } else {
+              wrap.style.transform = "translate(0, 0)";
+            }
+          });
+        }
+        document.addEventListener("mousemove", onMove);
+      })();
+
+      view.querySelectorAll(".floating-heart-photo-wrap img").forEach(function(img) {
+        img.onerror = function() {
+          var fallback = this.getAttribute("data-fallback");
+          if (fallback && !this.hasAttribute("data-failed")) {
+            this.setAttribute("data-failed", "true");
+            this.src = fallback;
+            this.removeAttribute("data-failed");
+          } else {
+            this.setAttribute("data-failed", "true");
+          }
+        };
+      });
+
+      document.getElementById("level3ReturnBtn").addEventListener("click", goToLevelSelect);
+      document.getElementById("level3ResetBtn").addEventListener("click", () => {
+        if (confirm("Reset all Level 3 progress? You’ll start from the Mission Brief again.")) {
+          window.resetLevel3State();
+          goToLevelSelect();
+        }
+      });
     }
 
     // ====== LEVEL 1 RENDER ROUTER ======
@@ -2358,6 +2910,15 @@
           level2State.screen = screens[currentIndex + 1];
           renderLevel2();
         }
+      } else if (currentMode === "level3") {
+        const l3screens = ["missionBrief", "loading", "patternLock", "gameMaster", "completed"];
+        const idx = l3screens.indexOf(level3State.screen);
+        if (idx < l3screens.length - 1) {
+          level3State.screen = l3screens[idx + 1];
+          if (level3State.screen === "gameMaster") { level3State.patternUnlocked = true; saveLevel3(); }
+          if (level3State.screen === "completed") { level3State.completed = true; saveLevel3(); }
+          renderLevel3();
+        }
       }
     });
 
@@ -2367,6 +2928,23 @@
       level2State.giftChoice = null;
       level2State.screen = "countdown";
       console.log("Level 2 state reset. Reload page or go back to level select to see countdown.");
+      if (currentMode === "select") renderLevelSelect();
+    };
+
+    // Dev helper: reset Level 3 state (call from console: resetLevel3State())
+    window.resetLevel3State = function() {
+      localStorage.removeItem("level3_wins");
+      localStorage.removeItem("level3_revealed_digits");
+      localStorage.removeItem("level3_pattern_unlocked");
+      localStorage.removeItem("level3_completed");
+      level3State.screen = "missionBrief";
+      level3State.transportRequested = false;
+      level3State.wins = [];
+      level3State.revealedDigits = [];
+      level3State.patternUnlocked = false;
+      level3State.completed = false;
+      console.log("Level 3 state reset.");
+      if (currentMode === "level3") renderLevel3();
       if (currentMode === "select") renderLevelSelect();
     };
 
