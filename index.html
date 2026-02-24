@@ -184,6 +184,8 @@
       color: var(--good);
     }
     .btn.good:hover { background: rgba(255, 143, 163, 0.35); }
+    .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+    .btn[disabled]:hover { background: inherit; box-shadow: none; }
 
     .panel {
       border: 2px solid var(--border);
@@ -799,6 +801,11 @@
     const LEVEL2_VIDEO_SRC = "https://drive.google.com/uc?export=download&id=1giss6ZLbdXjyDWHjl0palJiJj9FqrHO5";
     const LEVEL2_PIN = "1424";
 
+    // Level 3 (Toronto Mystery Mode): SMS contact for "I'm Ready"
+    const JASON_SMS_NUMBER = "+16477064400";
+    // Level 3: "I'M READY" button unlocks at 5:20 PM Toronto time (EST). Set date as needed.
+    const LEVEL3_READY_AT_UTC_MS = Date.parse("2026-02-24T22:20:00Z"); // 5:20 PM Feb 24 Toronto (EST)
+
     const LEVELS = [
       {
         difficulty: "Easy",
@@ -830,7 +837,7 @@
     ];
 
     // ====== GLOBAL MODE STATE ======
-    let currentMode = "select"; // "select" | "level1" | "level2"
+    let currentMode = "select"; // "select" | "level1" | "level2" | "level3"
 
     // ====== LEVEL 1 STATE ======
     const level1State = {
@@ -846,6 +853,11 @@
     const level2State = {
       screen: "countdown", // "countdown" | "loading" | "video" | "pin" | "photoOrderIntro" | "photoOrder" | "gift" | "giftLoading" | "confirmation"
       giftChoice: localStorage.getItem("level2_gift_choice") || null
+    };
+
+    // ====== LEVEL 3 STATE ======
+    const level3State = {
+      transportRequested: false
     };
 
     // ====== PHOTO ORDERING GAME STATE ======
@@ -885,8 +897,21 @@
         root.style.setProperty("--warn", "#60a0e8");
         root.style.setProperty("--phosphor", "#b3d9ff");
         root.style.setProperty("--phosphor-dim", "rgba(179, 217, 255, 0.2)");
-        // Change hearts to blue
         document.querySelectorAll(".pixel-heart").forEach(h => h.textContent = "💙");
+      } else if (theme === "level3") {
+        // Green CRT theme for Level 3 (Toronto Mystery Mode) — muted green, not lime
+        root.style.setProperty("--bg", "#0a120a");
+        root.style.setProperty("--screen", "#080c08");
+        root.style.setProperty("--card", "#0c130c");
+        root.style.setProperty("--border", "#2d4a2d");
+        root.style.setProperty("--text", "#a8c9a8");
+        root.style.setProperty("--muted", "#6b8f6b");
+        root.style.setProperty("--accent", "#5a9c5a");
+        root.style.setProperty("--good", "#7ab87a");
+        root.style.setProperty("--warn", "#c4a84a");
+        root.style.setProperty("--phosphor", "#a8c9a8");
+        root.style.setProperty("--phosphor-dim", "rgba(168, 201, 168, 0.2)");
+        document.querySelectorAll(".pixel-heart").forEach(h => h.textContent = "♥");
       } else {
         // Level 1 default red/pink theme
         root.style.setProperty("--bg", "#1a0808");
@@ -900,7 +925,6 @@
         root.style.setProperty("--warn", "#e8a060");
         root.style.setProperty("--phosphor", "#ffb3c1");
         root.style.setProperty("--phosphor-dim", "rgba(255, 179, 193, 0.2)");
-        // Reset hearts to red
         document.querySelectorAll(".pixel-heart").forEach(h => h.textContent = "♥");
       }
     }
@@ -945,6 +969,13 @@
         level2State.screen = "countdown";
       }
       renderLevel2();
+    }
+
+    function startLevel3() {
+      cleanupIntervals();
+      currentMode = "level3";
+      setTheme("level3");
+      renderLevel3();
     }
 
     // ====== LEVEL 1 FUNCTIONS ======
@@ -1098,6 +1129,10 @@
               <strong>LEVEL 2</strong> - Valentine's Day<br/>
               <span style="font-size: 11px; opacity: 0.7;" id="level2Status">${level2Status}</span>
             </button>
+            <button class="btn" id="level3Btn" style="width: 100%; text-align: left; border-color: #2d4a2d; background: rgba(45, 74, 45, 0.25); color: #a8c9a8;">
+              <strong>LEVEL 3</strong><br/>
+              <span style="font-size: 11px; opacity: 0.7;"></span>
+            </button>
           </div>
         </div>
       `;
@@ -1111,6 +1146,15 @@
       });
       level2Btn.addEventListener("mouseleave", () => {
         level2Btn.style.background = "rgba(107, 157, 255, 0.15)";
+      });
+
+      document.getElementById("level3Btn").addEventListener("click", startLevel3);
+      const level3Btn = document.getElementById("level3Btn");
+      level3Btn.addEventListener("mouseenter", () => {
+        level3Btn.style.background = "rgba(45, 74, 45, 0.4)";
+      });
+      level3Btn.addEventListener("mouseleave", () => {
+        level3Btn.style.background = "rgba(45, 74, 45, 0.25)";
       });
 
       // Update countdown every second if locked
@@ -2137,6 +2181,70 @@
           }
         };
       });
+    }
+
+    // ====== LEVEL 3: MISSION BRIEF (Toronto Mystery Mode) ======
+    function formatLevel3Countdown(ms) {
+      if (ms <= 0) return "00:00:00";
+      const hours = Math.floor(ms / 3600000);
+      const mins = Math.floor((ms % 3600000) / 60000);
+      const secs = Math.floor((ms % 60000) / 1000);
+      return `${String(hours).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+    }
+
+    function renderLevel3() {
+      stepPill.textContent = "Level 3";
+      const homeBtn = document.getElementById("homeBtn");
+      const skipBtn = document.getElementById("skipBtn");
+      if (homeBtn) homeBtn.style.display = "";
+      if (skipBtn) skipBtn.style.display = "none";
+
+      const now = Date.now();
+      const timeLeft = LEVEL3_READY_AT_UTC_MS - now;
+      const unlocked = timeLeft <= 0;
+      const transportStatus = level3State.transportRequested ? "Transport: requested" : "";
+      const countdownText = unlocked ? "" : formatLevel3Countdown(timeLeft);
+
+      view.innerHTML = `
+        <h1>Mission Brief (Toronto Mystery Mode)</h1>
+        <div class="panel">
+          <ul style="margin: 0 0 14px 0; padding-left: 20px; font-family: var(--mono); color: var(--text); font-size: 14px; line-height: 1.8;">
+            <li>Be ready: 5:30 - 5:45PM</li>
+            <li>Dress code: cute black dress (not too fancy - like 7/10) </li>
+            <li>Bring: overnight bag (next-day outfit + basic toiletries)</li>
+            <li>Bring also: a medium-sized rock</li>
+          </ul>
+          <p style="font-size: 12px; color: var(--muted); margin: 0 0 14px 0;">Only press I'M READY when you are ready to leave (5:30–5:45).</p>
+          ${unlocked ? "" : `<p style="margin: 12px 0 8px 0; font-family: var(--mono); font-size: 14px; color: var(--warn);">Button unlocks at 5:20 PM — <span id="level3Countdown">${countdownText}</span></p>`}
+          <div class="statusline" style="margin-top: 12px;">
+            <span id="level3TransportStatus">${transportStatus}</span>
+          </div>
+          <button class="btn primary" id="level3ReadyBtn" style="margin-top: 16px; width: 100%; font-size: 14px;" ${unlocked ? "" : "disabled"}>I'M READY 🟢</button>
+        </div>
+      `;
+
+      const readyBtn = document.getElementById("level3ReadyBtn");
+      if (unlocked) {
+        readyBtn.addEventListener("click", () => {
+          const body = encodeURIComponent("READY 🟢");
+          window.location.href = `sms:${JASON_SMS_NUMBER}?&body=${body}`;
+          level3State.transportRequested = true;
+          const statusEl = document.getElementById("level3TransportStatus");
+          if (statusEl) statusEl.textContent = "Transport: requested";
+        });
+      } else {
+        countdownInterval = setInterval(() => {
+          const now = Date.now();
+          const left = LEVEL3_READY_AT_UTC_MS - now;
+          const countdownEl = document.getElementById("level3Countdown");
+          if (countdownEl) countdownEl.textContent = formatLevel3Countdown(left);
+          if (left <= 0) {
+            if (countdownInterval) clearInterval(countdownInterval);
+            countdownInterval = null;
+            renderLevel3();
+          }
+        }, 1000);
+      }
     }
 
     // ====== LEVEL 1 RENDER ROUTER ======
