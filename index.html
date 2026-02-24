@@ -445,12 +445,6 @@
     .floating-heart-mouse-wrap:nth-child(2) { left: 72%; top: 20%; width: 90px; height: 90px; }
     .floating-heart-mouse-wrap:nth-child(3) { left: 15%; top: 65%; width: 110px; height: 110px; }
     .floating-heart-mouse-wrap:nth-child(4) { left: 68%; top: 60%; width: 95px; height: 95px; }
-    .floating-heart-mouse-wrap:nth-child(5) { left: 42%; top: 8%; width: 85px; height: 85px; }
-    .floating-heart-mouse-wrap:nth-child(6) { left: 88%; top: 45%; width: 100px; height: 100px; }
-    .floating-heart-mouse-wrap:nth-child(7) { left: 5%; top: 42%; width: 90px; height: 90px; }
-    .floating-heart-mouse-wrap:nth-child(8) { left: 55%; top: 72%; width: 95px; height: 95px; }
-    .floating-heart-mouse-wrap:nth-child(9) { left: 28%; top: 35%; width: 88px; height: 88px; }
-    .floating-heart-mouse-wrap:nth-child(10) { left: 78%; top: 78%; width: 92px; height: 92px; }
     .floating-heart-photo-wrap {
       position: absolute;
       inset: 0;
@@ -471,12 +465,6 @@
     .floating-heart-mouse-wrap:nth-child(2) .floating-heart-photo-wrap { animation-delay: -4s; animation-duration: 20s; }
     .floating-heart-mouse-wrap:nth-child(3) .floating-heart-photo-wrap { animation-delay: -8s; animation-duration: 17s; }
     .floating-heart-mouse-wrap:nth-child(4) .floating-heart-photo-wrap { animation-delay: -2s; animation-duration: 19s; }
-    .floating-heart-mouse-wrap:nth-child(5) .floating-heart-photo-wrap { animation-delay: -1s; animation-duration: 18s; }
-    .floating-heart-mouse-wrap:nth-child(6) .floating-heart-photo-wrap { animation-delay: -5s; animation-duration: 15s; }
-    .floating-heart-mouse-wrap:nth-child(7) .floating-heart-photo-wrap { animation-delay: -3s; animation-duration: 19s; }
-    .floating-heart-mouse-wrap:nth-child(8) .floating-heart-photo-wrap { animation-delay: -6s; animation-duration: 17s; }
-    .floating-heart-mouse-wrap:nth-child(9) .floating-heart-photo-wrap { animation-delay: -2.5s; animation-duration: 16s; }
-    .floating-heart-mouse-wrap:nth-child(10) .floating-heart-photo-wrap { animation-delay: -7s; animation-duration: 20s; }
     @keyframes floatHeartPhoto {
       0%, 100% { transform: translate(0, 0) rotate(-3deg); }
       25% { transform: translate(15px, -20px) rotate(2deg); }
@@ -1403,12 +1391,12 @@
           "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
           "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
         ];
-        const heartPhotosHtml = Array.from({ length: 10 }, (_, i) =>
-          `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
-        ).join("\n            ");
         popupOverlay.innerHTML = `
           <div class="floating-heart-photos" aria-hidden="true">
-            ${heartPhotosHtml}
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
           </div>
           <div class="success-popup">
             <h2>✅ Access granted. Welcome, Mi Reina</h2>
@@ -2263,14 +2251,13 @@
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
       ];
-      const heartPhotosHtmlL2 = Array.from({ length: 10 }, (_, i) =>
-        `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
-      ).join("\n            ");
-
       view.innerHTML = `
         <div style="position: relative;">
           <div class="floating-heart-photos" aria-hidden="true" style="z-index: 10;">
-            ${heartPhotosHtmlL2}
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
           </div>
           
           <h1 class="confirmation-title">Clear Your Calendar on FEB 24</h1>
@@ -2732,10 +2719,6 @@
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-b52cfb60-cda8-42a5-bf99-ce1c64083724.png",
         "../assets/c__Users_ramsa_AppData_Roaming_Cursor_User_workspaceStorage_1319f850a7857542c8f3f3beee19598a_images_image-a6c2a70d-48a1-4ef1-8072-0fec83ef52d5.png"
       ];
-      const heartPhotosHtmlL3 = Array.from({ length: 10 }, (_, i) =>
-        `<div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart${i + 1}.png" alt="" data-fallback="${HEART_FALLBACKS[i % HEART_FALLBACKS.length]}" /></div></div>`
-      ).join("\n            ");
-
       const creditsBlock = `
         <p style="font-size: 14px; color: var(--text); margin-bottom: 20px;">— Credits —</p>
         <p><strong>Executive Producer</strong><br/>Jasmine</p>
@@ -2748,7 +2731,10 @@
       view.innerHTML = `
         <div style="position: relative;">
           <div class="floating-heart-photos" aria-hidden="true" style="z-index: 10;">
-            ${heartPhotosHtmlL3}
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart1.png" alt="" data-fallback="${HEART_FALLBACKS[0]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart2.png" alt="" data-fallback="${HEART_FALLBACKS[1]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart3.png" alt="" data-fallback="${HEART_FALLBACKS[2]}" /></div></div>
+            <div class="floating-heart-mouse-wrap"><div class="floating-heart-photo-wrap"><img src="assets/heart4.png" alt="" data-fallback="${HEART_FALLBACKS[3]}" /></div></div>
           </div>
 
           <h1 style="text-align: center;">Mission Completed ✅</h1>
